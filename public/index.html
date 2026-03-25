@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>資金費率套利雷達</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#080c12; --bg2:#0d1420; --bg3:#111927; --bg4:#161f2e;
+  --border:#1e2d42; --border2:#263650;
+  --text:#c8d8ea; --dim:#4a6380; --mute:#2a3f58;
+  --accent:#00d4ff; --green:#00e676; --red:#ff4f6a;
+  --yellow:#ffc107; --orange:#ff8c00;
+  --mono:'Space Mono',monospace; --sans:'Noto Sans TC',sans-serif;
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{font-size:14px;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
+
+/* 背景網格 */
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:40px 40px;opacity:.18;pointer-events:none;z-index:0;}
+
+/* ── Header ── */
+header{position:sticky;top:0;z-index:100;
+  background:rgba(8,12,18,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:34px;height:34px;border:1.5px solid var(--accent);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+  box-shadow:0 0 12px rgba(0,212,255,.2);}
+.logo-text h1{font-family:var(--mono);font-size:13px;color:#fff;letter-spacing:.5px;}
+.logo-text p{font-size:10px;color:var(--dim);letter-spacing:1px;margin-top:2px;}
+.header-right{display:flex;align-items:center;gap:8px;}
+.status-pill{display:flex;align-items:center;gap:5px;background:var(--bg3);
+  border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-family:var(--mono);font-size:10px;color:var(--dim);}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--mute);}
+.dot.live{background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-refresh{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);
+  color:var(--accent);border-radius:6px;font-family:var(--mono);font-size:11px;
+  padding:5px 10px;cursor:pointer;white-space:nowrap;}
+.btn-refresh:disabled{opacity:.4;cursor:not-allowed;}
+
+/* 進度條 */
+.progress{position:fixed;bottom:0;left:0;height:2px;
+  background:linear-gradient(90deg,var(--accent),var(--green));
+  box-shadow:0 0 6px var(--accent);transition:width 1s linear;z-index:200;}
+
+/* ── 統計欄（橫向捲動）── */
+.stats-scroll{display:flex;gap:10px;padding:12px 16px;overflow-x:auto;
+  scrollbar-width:none;position:relative;z-index:10;}
+.stats-scroll::-webkit-scrollbar{display:none;}
+.stat-card{flex:0 0 130px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px 14px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.c-blue::before{background:var(--accent);}
+.c-green::before{background:var(--green);}
+.c-orange::before{background:var(--orange);}
+.c-yellow::before{background:var(--yellow);}
+.stat-label{font-size:9px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;font-family:var(--mono);}
+.stat-val{font-size:20px;font-family:var(--mono);font-weight:700;color:#fff;margin-top:4px;}
+.stat-sub{font-size:10px;color:var(--dim);margin-top:2px;}
+
+/* ── 手續費計算器 ── */
+.calc-section{margin:0 16px 12px;position:relative;z-index:10;}
+.calc-toggle{width:100%;background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);border-radius:var(--radius);padding:12px 16px;
+  display:flex;align-items:center;justify-content:space-between;cursor:pointer;
+  font-family:var(--sans);font-size:13px;}
+.calc-toggle .arrow{transition:transform .2s;font-size:10px;color:var(--dim);}
+.calc-toggle.open .arrow{transform:rotate(180deg);}
+.calc-body{background:var(--bg2);border:1px solid var(--border);border-top:none;
+  border-radius:0 0 var(--radius) var(--radius);padding:16px;display:none;}
+.calc-body.show{display:block;}
+
+.calc-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.calc-label{font-size:11px;color:var(--dim);min-width:70px;font-family:var(--mono);}
+.calc-input{flex:1;min-width:100px;background:var(--bg3);border:1px solid var(--border2);
+  color:#fff;border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:13px;outline:none;}
+.calc-input:focus{border-color:var(--accent);}
+.calc-select{flex:1;background:var(--bg3);border:1px solid var(--border2);
+  color:#fff;border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:12px;
+  outline:none;appearance:none;cursor:pointer;}
+.calc-result{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.calc-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.calc-item{text-align:center;}
+.calc-item-label{font-size:10px;color:var(--dim);font-family:var(--mono);letter-spacing:1px;}
+.calc-item-val{font-size:16px;font-family:var(--mono);font-weight:700;margin-top:4px;}
+.val-green{color:var(--green);}
+.val-red{color:var(--red);}
+.val-yellow{color:var(--yellow);}
+.val-accent{color:var(--accent);}
+.calc-note{font-size:10px;color:var(--mute);margin-top:10px;line-height:1.6;font-family:var(--mono);}
+
+/* ── 篩選控制 ── */
+.controls{padding:0 16px 12px;display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:10;}
+.ctrl-group{display:flex;align-items:center;gap:6px;background:var(--bg2);
+  border:1px solid var(--border);border-radius:8px;padding:6px 10px;flex:1;min-width:140px;}
+.ctrl-label{font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;
+  font-family:var(--mono);white-space:nowrap;}
+.ctrl-input{flex:1;background:transparent;border:none;color:var(--text);
+  font-family:var(--mono);font-size:12px;outline:none;min-width:0;}
+.ctrl-select{flex:1;background:transparent;border:none;color:var(--text);
+  font-family:var(--mono);font-size:11px;outline:none;appearance:none;cursor:pointer;min-width:0;}
+
+/* 交易所篩選標籤 */
+.ex-filter{padding:0 16px 12px;display:flex;gap:6px;flex-wrap:wrap;position:relative;z-index:10;}
+.ex-chip{padding:4px 10px;border-radius:20px;font-size:10px;font-family:var(--mono);
+  font-weight:700;cursor:pointer;border:1px solid;transition:all .15s;letter-spacing:.5px;}
+.ex-chip.active{opacity:1;}
+.ex-chip:not(.active){opacity:.35;}
+.chip-binance{color:#f0b90b;border-color:rgba(240,185,11,.4);background:rgba(240,185,11,.08);}
+.chip-bybit  {color:#ff8c5a;border-color:rgba(255,107,53,.4);background:rgba(255,107,53,.08);}
+.chip-okx    {color:#29b6f6;border-color:rgba(41,182,246,.4);background:rgba(0,212,255,.08);}
+.chip-bitget {color:#00d09c;border-color:rgba(0,208,156,.4);background:rgba(0,208,156,.08);}
+.chip-mexc   {color:#b39ddb;border-color:rgba(179,157,219,.4);background:rgba(179,157,219,.08);}
+.chip-kucoin {color:#26c6da;border-color:rgba(38,198,218,.4);background:rgba(38,198,218,.08);}
+
+/* 交易所狀態列 */
+.ex-status{padding:0 16px 12px;display:flex;gap:6px;flex-wrap:wrap;position:relative;z-index:10;}
+.ex-status-chip{padding:3px 8px;border-radius:4px;font-size:9px;font-family:var(--mono);
+  display:flex;align-items:center;gap:4px;}
+.ex-status-chip.ok  {background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.2);}
+.ex-status-chip.err {background:rgba(255,79,106,.1);color:var(--red);border:1px solid rgba(255,79,106,.2);}
+
+/* ── 卡片列表（手機版）── */
+.cards{padding:0 16px 80px;display:flex;flex-direction:column;gap:10px;position:relative;z-index:10;}
+
+/* 每張卡片 */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;transition:border-color .2s;}
+.card.hot-1{border-color:rgba(255,140,0,.4);}
+.card.hot-2{border-color:rgba(255,193,7,.3);}
+.card.hot-3{border-color:rgba(0,230,118,.25);}
+
+/* 卡片頂欄 */
+.card-header{padding:12px 14px 10px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);cursor:pointer;}
+.card-left{display:flex;align-items:center;gap:10px;}
+.card-rank{font-family:var(--mono);font-size:10px;color:var(--mute);min-width:16px;}
+.card-coin{font-family:var(--mono);font-weight:700;font-size:15px;color:#fff;}
+.card-tag{font-size:9px;color:var(--dim);background:var(--bg3);border:1px solid var(--border);
+  border-radius:3px;padding:1px 5px;font-family:var(--mono);}
+.card-right{text-align:right;}
+.card-spread{font-family:var(--mono);font-weight:700;font-size:14px;}
+.card-spread-label{font-size:9px;color:var(--dim);font-family:var(--mono);letter-spacing:1px;margin-top:2px;}
+
+/* 卡片主體（費率格子）*/
+.card-body{padding:10px 14px;}
+.card-rates{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.rate-box{background:var(--bg3);border:1px solid var(--border);border-radius:6px;
+  padding:7px 8px;text-align:center;}
+.rate-box.ex-max{border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.06);}
+.rate-box.ex-min{border-color:rgba(255,79,106,.35);background:rgba(255,79,106,.05);}
+.rate-ex{font-size:8px;font-family:var(--mono);font-weight:700;letter-spacing:.5px;margin-bottom:3px;}
+.rate-val{font-size:12px;font-family:var(--mono);}
+.rate-na{color:var(--mute);font-size:10px;}
+
+/* 卡片底欄（展開資訊）*/
+.card-footer{padding:0 14px;max-height:0;overflow:hidden;transition:max-height .3s,padding .3s;}
+.card-footer.open{max-height:300px;padding:10px 14px 14px;}
+.footer-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.footer-item{}
+.footer-label{font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;font-family:var(--mono);}
+.footer-val{font-size:13px;font-family:var(--mono);margin-top:2px;}
+.divider{height:1px;background:var(--border);margin:8px 0;}
+.strategy-text{font-size:11px;color:var(--text);line-height:1.7;}
+.strategy-text b{color:var(--accent);}
+
+/* 做多做空標籤 */
+.dir-badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-family:var(--mono);font-weight:700;}
+.dir-long {background:rgba(0,230,118,.12);color:var(--green);border:1px solid rgba(0,230,118,.25);}
+.dir-short{background:rgba(255,79,106,.12);color:var(--red);border:1px solid rgba(255,79,106,.25);}
+
+/* 收益計算結果（卡片內）*/
+.earn-result{background:var(--bg4);border:1px solid var(--border2);border-radius:7px;
+  padding:10px 12px;margin-top:8px;}
+.earn-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.earn-row:last-child{margin-bottom:0;}
+.earn-key{font-size:10px;color:var(--dim);font-family:var(--mono);}
+.earn-val{font-size:11px;font-family:var(--mono);font-weight:700;}
+
+/* 空狀態 */
+.empty-state{padding:60px 20px;text-align:center;color:var(--dim);font-family:var(--mono);font-size:12px;}
+.loading-state{padding:60px 20px;text-align:center;}
+.spinner{display:inline-block;width:24px;height:24px;border:2px solid var(--border2);
+  border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 桌機版表格（螢幕≥768px 時顯示）*/
+@media(min-width:768px){
+  html{font-size:14px;}
+  header{padding:16px 32px;}
+  .logo-text h1{font-size:16px;}
+  .stats-scroll{padding:16px 32px;}
+  .stat-card{flex:1;min-width:130px;}
+  .calc-section{margin:0 32px 16px;}
+  .controls{padding:0 32px 16px;}
+  .ex-filter,.ex-status{padding:0 32px 12px;}
+  .cards{display:none;}
+  .table-wrap{display:block;padding:0 32px 60px;position:relative;z-index:10;}
+  table{width:100%;border-collapse:collapse;}
+  thead tr{background:var(--bg3);border-bottom:1px solid var(--border2);}
+  th{padding:10px 12px;font-family:var(--mono);font-size:10px;letter-spacing:1.5px;
+     text-transform:uppercase;color:var(--dim);text-align:right;cursor:pointer;user-select:none;white-space:nowrap;}
+  th:first-child{text-align:left;}
+  th:hover,th.sorted{color:var(--accent);}
+  tbody tr{border-bottom:1px solid rgba(30,45,66,.5);transition:background .15s;}
+  tbody tr:hover{background:rgba(0,212,255,.03);}
+  tbody tr.hot-1{background:rgba(255,140,0,.04);}
+  tbody tr.hot-2{background:rgba(255,193,7,.03);}
+  td{padding:9px 12px;font-size:12px;text-align:right;white-space:nowrap;}
+  td:first-child{text-align:left;}
+  .coin-cell{display:flex;align-items:center;gap:8px;}
+  .coin-rank{font-family:var(--mono);font-size:10px;color:var(--mute);min-width:18px;text-align:right;}
+  .coin-name{font-family:var(--mono);font-weight:700;color:#fff;}
+  .coin-tag{font-size:9px;color:var(--dim);background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:1px 4px;font-family:var(--mono);}
+  .rp{color:var(--green);font-family:var(--mono);}
+  .rn{color:var(--red);font-family:var(--mono);}
+  .rz{color:var(--mute);font-family:var(--mono);}
+  .rna{color:var(--mute);font-family:var(--mono);font-size:10px;}
+  .spread-wrap{display:flex;align-items:center;gap:6px;justify-content:flex-end;}
+  .sbar{height:3px;border-radius:2px;background:linear-gradient(90deg,var(--green),var(--orange));min-width:4px;}
+}
+@media(max-width:767px){
+  .table-wrap{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="progress" id="progress-bar"></div>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">📡</div>
+    <div class="logo-text">
+      <h1>FUNDING RADAR</h1>
+      <p>資金費率套利即時儀表板</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-pill">
+      <div class="dot" id="dot"></div>
+      <span id="status-text">載入中</span>
+    </div>
+    <button class="btn-refresh" id="refresh-btn" onclick="loadData(true)">⟳</button>
+  </div>
+</header>
+
+<!-- ── 統計 ── -->
+<div class="stats-scroll">
+  <div class="stat-card c-blue">
+    <div class="stat-label">幣種數</div>
+    <div class="stat-val" id="s-total">—</div>
+    <div class="stat-sub">USDT 永續</div>
+  </div>
+  <div class="stat-card c-orange">
+    <div class="stat-label">套利機會</div>
+    <div class="stat-val" id="s-arb">—</div>
+    <div class="stat-sub">扣費後有利</div>
+  </div>
+  <div class="stat-card c-green">
+    <div class="stat-label">最大差距</div>
+    <div class="stat-val" id="s-max">—</div>
+    <div class="stat-sub" id="s-max-coin">最高套利幣</div>
+  </div>
+  <div class="stat-card c-yellow">
+    <div class="stat-label">最高年化</div>
+    <div class="stat-val" id="s-annual">—</div>
+    <div class="stat-sub">淨值年化估算</div>
+  </div>
+</div>
+
+<!-- ── 手續費計算器 ── -->
+<div class="calc-section">
+  <button class="calc-toggle" id="calc-toggle" onclick="toggleCalc()">
+    <span>💰 投入資金計算器（扣手續費後能賺多少？）</span>
+    <span class="arrow">▼</span>
+  </button>
+  <div class="calc-body" id="calc-body">
+    <div class="calc-row">
+      <span class="calc-label">投入金額</span>
+      <input class="calc-input" id="calc-amount" type="number" value="1000" min="1"
+        placeholder="USDT" oninput="updateCalc()"/>
+      <span style="font-family:var(--mono);font-size:12px;color:var(--dim)">USDT</span>
+    </div>
+    <div class="calc-row">
+      <span class="calc-label">套利組合</span>
+      <select class="calc-select" id="calc-pair" onchange="updateCalc()">
+        <option value="">── 請先載入資料 ──</option>
+      </select>
+    </div>
+    <div class="calc-row">
+      <span class="calc-label">持倉時間</span>
+      <select class="calc-select" id="calc-period" onchange="updateCalc()">
+        <option value="1">1 個結算週期（8小時）</option>
+        <option value="3" selected>3 個週期（1天）</option>
+        <option value="21">21 個週期（1週）</option>
+        <option value="90">90 個週期（1個月）</option>
+        <option value="1095">1095 個週期（1年）</option>
+      </select>
+    </div>
+    <div class="calc-result" id="calc-result">
+      <div style="text-align:center;color:var(--dim);font-family:var(--mono);font-size:11px;">
+        請先選擇套利組合
+      </div>
+    </div>
+    <div class="calc-note">
+      ⚠ 此計算假設費率不變，實際費率每8小時更新一次，僅供參考估算。<br>
+      ⚠ 資金費率套利策略需要同時開倉兩個交易所，請確認兩邊都有足夠資金。<br>
+      ⚠ 此工具只顯示觀察資料，不自動下單，不建議任何投資決策。
+    </div>
+  </div>
+</div>
+
+<!-- ── 篩選 ── -->
+<div class="controls">
+  <div class="ctrl-group">
+    <span class="ctrl-label">搜尋</span>
+    <input class="ctrl-input" id="search" type="text" placeholder="幣種名稱" oninput="applyFilters()"/>
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">門檻</span>
+    <select class="ctrl-select" id="threshold" onchange="applyFilters()">
+      <option value="0">全部顯示</option>
+      <option value="0.0001">≥ 0.01%</option>
+      <option value="0.0003" selected>≥ 0.03%</option>
+      <option value="0.001">≥ 0.1%</option>
+      <option value="0.003">≥ 0.3%</option>
+    </select>
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">排序</span>
+    <select class="ctrl-select" id="sort-sel" onchange="applyFilters()">
+      <option value="netSpread">淨套利差</option>
+      <option value="spread">總差值</option>
+      <option value="annual">年化</option>
+    </select>
+  </div>
+</div>
+
+<!-- 交易所篩選 -->
+<div class="ex-filter">
+  <div class="ex-chip chip-binance active" onclick="toggleEx('binance',this)">BINANCE</div>
+  <div class="ex-chip chip-bybit   active" onclick="toggleEx('bybit',this)">BYBIT</div>
+  <div class="ex-chip chip-okx     active" onclick="toggleEx('okx',this)">OKX</div>
+  <div class="ex-chip chip-bitget  active" onclick="toggleEx('bitget',this)">BITGET</div>
+  <div class="ex-chip chip-mexc    active" onclick="toggleEx('mexc',this)">MEXC</div>
+  <div class="ex-chip chip-kucoin  active" onclick="toggleEx('kucoin',this)">KUCOIN</div>
+</div>
+
+<!-- 交易所狀態 -->
+<div class="ex-status" id="ex-status"></div>
+
+<!-- ── 手機版：卡片 ── -->
+<div class="cards" id="cards">
+  <div class="loading-state"><div class="spinner"></div></div>
+</div>
+
+<!-- ── 桌機版：表格 ── -->
+<div class="table-wrap" id="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th onclick="sortBy('symbol')">幣種</th>
+        <th onclick="sortBy('netSpread')" class="sorted">淨套利差 ▼</th>
+        <th onclick="sortBy('annual')">年化估算</th>
+        <th onclick="sortBy('binance')">Binance</th>
+        <th onclick="sortBy('bybit')">Bybit</th>
+        <th onclick="sortBy('okx')">OKX</th>
+        <th onclick="sortBy('bitget')">Bitget</th>
+        <th onclick="sortBy('mexc')">MEXC</th>
+        <th onclick="sortBy('kucoin')">KuCoin</th>
+        <th>下次結算</th>
+      </tr>
+    </thead>
+    <tbody id="table-body">
+      <tr><td colspan="10" style="text-align:center;padding:40px;color:var(--dim);font-family:var(--mono)">
+        <span class="spinner"></span> 載入中...
+      </td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+// ─────────────────────────────────────
+// 設定
+// ─────────────────────────────────────
+const REFRESH = 60;
+const API = '/api/funding';
+const FEES = { binance:.0005, bybit:.0006, okx:.0005, bitget:.0006, mexc:.0002, kucoin:.0006 };
+const EX_LABELS = { binance:'Binance', bybit:'Bybit', okx:'OKX', bitget:'Bitget', mexc:'MEXC', kucoin:'KuCoin' };
+const EX_ALL = ['binance','bybit','okx','bitget','mexc','kucoin'];
+
+let allData=[], visibleEx=new Set(EX_ALL), currentSort='netSpread', sortAsc=false;
+let countdown=REFRESH, timer=null, isLoading=false;
+
+// ─────────────────────────────────────
+// 載入資料
+// ─────────────────────────────────────
+async function loadData(manual=false){
+  if(isLoading) return;
+  isLoading=true;
+  const btn=document.getElementById('refresh-btn');
+  btn.disabled=true; btn.textContent='⟳';
+  setStatus('info','更新中...');
+  try{
+    const r = await fetch(API+'?t='+Date.now());
+    const j = await r.json();
+    if(!j.success) throw new Error(j.error||'伺服器錯誤');
+    allData = j.data;
+    renderExStatus(j.exchangeStatus||{});
+    updateStats();
+    applyFilters();
+    setStatus('live',`${allData.length} 個幣種`);
+    // 更新計算器選單
+    buildCalcPairs();
+    clearInterval(timer);
+    countdown=REFRESH;
+    startCountdown();
+  }catch(e){
+    setStatus('err','載入失敗：'+e.message);
+    renderEmpty('❌ 資料載入失敗，請點右上角重試');
+  }
+  isLoading=false;
+  btn.disabled=false; btn.textContent='⟳';
+}
+
+// ─────────────────────────────────────
+// 倒數
+// ─────────────────────────────────────
+function startCountdown(){
+  const bar=document.getElementById('progress-bar');
+  bar.style.width='100%';
+  timer=setInterval(()=>{
+    countdown--;
+    const pct=(countdown/REFRESH)*100;
+    bar.style.width=pct+'%';
+    if(countdown<=0){ clearInterval(timer); loadData(); }
+  },1000);
+}
+
+// ─────────────────────────────────────
+// 統計卡片
+// ─────────────────────────────────────
+function updateStats(){
+  const th=parseFloat(document.getElementById('threshold').value)||0;
+  const opps=allData.filter(d=>d.netSpread>th);
+  document.getElementById('s-total').textContent=allData.length;
+  document.getElementById('s-arb').textContent=opps.length;
+  if(allData.length>0){
+    const top=allData[0];
+    document.getElementById('s-max').textContent=(top.spread*100).toFixed(3)+'%';
+    document.getElementById('s-max-coin').textContent=top.symbol+'/USDT';
+    document.getElementById('s-annual').textContent=(top.netSpread*3*365*100).toFixed(0)+'%';
+  }
+}
+
+// ─────────────────────────────────────
+// 交易所狀態列
+// ─────────────────────────────────────
+function renderExStatus(status){
+  const el=document.getElementById('ex-status');
+  el.innerHTML=EX_ALL.map(ex=>`
+    <div class="ex-status-chip ${status[ex]==='ok'?'ok':'err'}">
+      ${status[ex]==='ok'?'●':'✕'} ${EX_LABELS[ex]}
+    </div>`).join('');
+}
+
+// ─────────────────────────────────────
+// 交易所開關
+// ─────────────────────────────────────
+function toggleEx(ex, el){
+  if(visibleEx.has(ex)) visibleEx.delete(ex);
+  else visibleEx.add(ex);
+  el.classList.toggle('active');
+  applyFilters();
+}
+
+// ─────────────────────────────────────
+// 篩選 + 排序
+// ─────────────────────────────────────
+function applyFilters(){
+  const kw=document.getElementById('search').value.trim().toUpperCase();
+  const th=parseFloat(document.getElementById('threshold').value)||0;
+  const sortKey=document.getElementById('sort-sel').value;
+
+  let rows=allData.filter(r=>{
+    if(kw && !r.symbol.includes(kw)) return false;
+    if(r.netSpread < th) return false;
+    // 必須有至少兩個可見交易所都有資料
+    const vis=EX_ALL.filter(e=>visibleEx.has(e) && r[e]!==undefined);
+    return vis.length>=2;
+  });
+
+  rows.sort((a,b)=>{
+    let va=a[sortKey]??-Infinity, vb=b[sortKey]??-Infinity;
+    return sortAsc? va-vb : vb-va;
+  });
+
+  renderCards(rows);
+  renderTable(rows);
+  document.getElementById('s-arb').textContent=rows.length;
+}
+
+function sortBy(key){
+  if(currentSort===key) sortAsc=!sortAsc;
+  else{ currentSort=key; sortAsc=false; }
+  document.getElementById('sort-sel').value=key==='symbol'?'netSpread':key;
+  applyFilters();
+}
+
+// ─────────────────────────────────────
+// 渲染：手機版卡片
+// ─────────────────────────────────────
+function renderCards(rows){
+  const el=document.getElementById('cards');
+  if(rows.length===0){ el.innerHTML='<div class="empty-state">😶 沒有符合條件的套利機會<br>試試降低門檻值</div>'; return; }
+  const maxSpread=rows[0]?.spread||1;
+
+  el.innerHTML=rows.map((row,i)=>{
+    const hotClass=i===0?'hot-1':i===1?'hot-2':i===2?'hot-3':'';
+    const spreadColor=row.netSpread>=0.001?'var(--orange)':row.netSpread>=0.0003?'var(--yellow)':'var(--green)';
+
+    // 6個交易所費率格
+    const rateBoxes=EX_ALL.map(ex=>{
+      if(!visibleEx.has(ex)) return '';
+      const isMax=ex===row.maxEx, isMin=ex===row.minEx;
+      const cls=isMax?'ex-max':isMin?'ex-min':'';
+      const exColor=exColor_(ex);
+      return `<div class="rate-box ${cls}">
+        <div class="rate-ex" style="color:${exColor}">${EX_LABELS[ex].toUpperCase()}</div>
+        ${row[ex]!==undefined
+          ? `<div class="rate-val ${row[ex]>0.0001?'rp':row[ex]<-0.0001?'rn':'rz'}">${row[ex]>=0?'+':''}${(row[ex]*100).toFixed(4)}%</div>`
+          : `<div class="rate-na">—</div>`}
+      </div>`;
+    }).join('');
+
+    return `<div class="card ${hotClass}" id="card-${row.symbol}">
+      <div class="card-header" onclick="toggleCard('${row.symbol}')">
+        <div class="card-left">
+          <span class="card-rank">${i+1}</span>
+          <span class="card-coin">${row.symbol}</span>
+          <span class="card-tag">PERP</span>
+        </div>
+        <div class="card-right">
+          <div class="card-spread" style="color:${spreadColor}">
+            ${(row.netSpread*100).toFixed(4)}%
+          </div>
+          <div class="card-spread-label">扣費淨差 ▼</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-rates">${rateBoxes}</div>
+      </div>
+      <div class="card-footer" id="footer-${row.symbol}">
+        ${buildFooter(row, i)}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildFooter(row, rank){
+  const annual=(row.netSpread*3*365*100).toFixed(1);
+  const next=bestNext(row);
+  const amount=parseFloat(document.getElementById('calc-amount')?.value)||1000;
+  const periods=parseFloat(document.getElementById('calc-period')?.value)||3;
+  const earn=calcEarn(row, amount, periods);
+
+  return `<div class="footer-grid">
+    <div class="footer-item">
+      <div class="footer-label">年化估算（淨）</div>
+      <div class="footer-val" style="color:var(--yellow)">${annual}%</div>
+    </div>
+    <div class="footer-item">
+      <div class="footer-label">下次結算</div>
+      <div class="footer-val" style="color:var(--dim)">${next}</div>
+    </div>
+    <div class="footer-item">
+      <div class="footer-label">建議做多</div>
+      <div class="footer-val"><span class="dir-badge dir-long">${EX_LABELS[row.minEx]}</span></div>
+    </div>
+    <div class="footer-item">
+      <div class="footer-label">建議做空</div>
+      <div class="footer-val"><span class="dir-badge dir-short">${EX_LABELS[row.maxEx]}</span></div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="strategy-text">
+    💡 在 <b>${EX_LABELS[row.maxEx]}</b>（費率高）做空收費率，同時在 <b>${EX_LABELS[row.minEx]}</b>（費率低）做多付費率。每次結算淨收益約 <b style="color:var(--green)">${(row.netSpread*100).toFixed(4)}%</b>。
+  </div>
+  <div class="earn-result">
+    <div class="earn-row">
+      <span class="earn-key">投入 ${amount} USDT × ${periods} 週期</span>
+    </div>
+    <div class="earn-row">
+      <span class="earn-key">資金費率收入</span>
+      <span class="earn-val val-green">+${earn.income.toFixed(2)} USDT</span>
+    </div>
+    <div class="earn-row">
+      <span class="earn-key">開平倉手續費</span>
+      <span class="earn-val val-red">-${earn.fee.toFixed(2)} USDT</span>
+    </div>
+    <div class="earn-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px;">
+      <span class="earn-key" style="color:var(--text)">預估淨收益</span>
+      <span class="earn-val ${earn.net>=0?'val-green':'val-red'}" style="font-size:14px">${earn.net>=0?'+':''}${earn.net.toFixed(2)} USDT</span>
+    </div>
+  </div>`;
+}
+
+function toggleCard(symbol){
+  const footer=document.getElementById('footer-'+symbol);
+  footer.classList.toggle('open');
+}
+
+// ─────────────────────────────────────
+// 渲染：桌機版表格
+// ─────────────────────────────────────
+function renderTable(rows){
+  const tbody=document.getElementById('table-body');
+  if(rows.length===0){
+    tbody.innerHTML=`<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--dim);font-family:var(--mono)">
+      沒有符合條件的資料
+    </td></tr>`;
+    return;
+  }
+  const maxS=rows[0]?.spread||1;
+  tbody.innerHTML=rows.map((row,i)=>{
+    const hotClass=i===0?'hot-1':i===1?'hot-2':'';
+    const bw=Math.min((row.spread/maxS)*60,60);
+    const annual=(row.netSpread*3*365*100).toFixed(1);
+    const netColor=row.netSpread>=0.001?'var(--orange)':row.netSpread>=0.0003?'var(--yellow)':'var(--green)';
+    return `<tr class="${hotClass}">
+      <td><div class="coin-cell">
+        <span class="coin-rank">${i+1}</span>
+        <span class="coin-name">${row.symbol}</span>
+        <span class="coin-tag">PERP</span>
+      </div></td>
+      <td><div class="spread-wrap">
+        <span style="font-family:var(--mono);font-weight:700;color:${netColor}">${(row.netSpread*100).toFixed(4)}%</span>
+        <div class="sbar" style="width:${bw}px"></div>
+      </div></td>
+      <td style="color:var(--yellow);font-family:var(--mono)">${annual}%</td>
+      ${EX_ALL.map(ex=>`<td>${rCell(row[ex], ex===row.maxEx, ex===row.minEx)}</td>`).join('')}
+      <td style="font-family:var(--mono);font-size:11px;color:var(--dim)">${bestNext(row)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function rCell(v, isMax, isMin){
+  if(v===undefined||v===null) return '<span class="rna">—</span>';
+  const pct=(v*100).toFixed(4);
+  const cls=v>0.0001?'rp':v<-0.0001?'rn':'rz';
+  const bg=isMax?'color:var(--green);':isMin?'color:var(--red);':'';
+  return `<span class="${cls}" style="${bg}font-family:var(--mono)">${v>=0?'+':''}${pct}%</span>`;
+}
+
+// ─────────────────────────────────────
+// 計算器
+// ─────────────────────────────────────
+function buildCalcPairs(){
+  const sel=document.getElementById('calc-pair');
+  const top=allData.slice(0,50);
+  sel.innerHTML='<option value="">── 選擇套利組合 ──</option>'+
+    top.map(r=>`<option value="${r.symbol}">${r.symbol} (${EX_LABELS[r.maxEx]}空 / ${EX_LABELS[r.minEx]}多，淨差${(r.netSpread*100).toFixed(4)}%)</option>`).join('');
+  updateCalc();
+}
+
+function calcEarn(row, amount, periods){
+  const income = amount * row.spread * periods;
+  const fee    = amount * row.totalFee; // 開+平一次
+  const net    = income - fee;
+  return { income, fee, net };
+}
+
+function updateCalc(){
+  const sym=document.getElementById('calc-pair')?.value;
+  const amount=parseFloat(document.getElementById('calc-amount')?.value)||0;
+  const periods=parseFloat(document.getElementById('calc-period')?.value)||3;
+  const el=document.getElementById('calc-result');
+
+  if(!sym||!amount){ el.innerHTML='<div style="text-align:center;color:var(--dim);font-family:var(--mono);font-size:11px;">請先選擇套利組合並輸入金額</div>'; return; }
+
+  const row=allData.find(r=>r.symbol===sym);
+  if(!row){ el.innerHTML='<div style="color:var(--dim);font-family:var(--mono);font-size:11px;">找不到資料</div>'; return; }
+
+  const e=calcEarn(row, amount, periods);
+  const annualized=(row.netSpread*3*365*100).toFixed(1);
+  const breakeven=Math.ceil(row.totalFee/row.spread);
+
+  el.innerHTML=`
+    <div class="calc-result-grid">
+      <div class="calc-item">
+        <div class="calc-item-label">資金費率收入</div>
+        <div class="calc-item-val val-green">+${e.income.toFixed(2)} U</div>
+      </div>
+      <div class="calc-item">
+        <div class="calc-item-label">手續費（開+平）</div>
+        <div class="calc-item-val val-red">-${e.fee.toFixed(2)} U</div>
+      </div>
+      <div class="calc-item">
+        <div class="calc-item-label">預估淨收益</div>
+        <div class="calc-item-val ${e.net>=0?'val-green':'val-red'}" style="font-size:18px">${e.net>=0?'+':''}${e.net.toFixed(2)} U</div>
+      </div>
+      <div class="calc-item">
+        <div class="calc-item-label">年化報酬率</div>
+        <div class="calc-item-val val-yellow">${annualized}%</div>
+      </div>
+    </div>
+    <div class="calc-note" style="margin-top:10px">
+      策略：<b style="color:var(--red)">在 ${EX_LABELS[row.maxEx]} 做空</b>（收費率）+ <b style="color:var(--green)">在 ${EX_LABELS[row.minEx]} 做多</b>（付費率）<br>
+      手續費率：${EX_LABELS[row.maxEx]} ${(FEES[row.maxEx]*100).toFixed(3)}% + ${EX_LABELS[row.minEx]} ${(FEES[row.minEx]*100).toFixed(3)}% = 共 ${(row.totalFee*100).toFixed(3)}%<br>
+      損益兩平：至少持倉 ${breakeven} 個週期（約 ${(breakeven*8/24).toFixed(1)} 天）
+    </div>`;
+}
+
+function toggleCalc(){
+  const body=document.getElementById('calc-body');
+  const toggle=document.getElementById('calc-toggle');
+  body.classList.toggle('show');
+  toggle.classList.toggle('open');
+}
+
+// ─────────────────────────────────────
+// 工具
+// ─────────────────────────────────────
+function exColor_(ex){
+  return {binance:'#f0b90b',bybit:'#ff8c5a',okx:'#29b6f6',bitget:'#00d09c',mexc:'#b39ddb',kucoin:'#26c6da'}[ex]||'#fff';
+}
+
+function bestNext(row){
+  const ts=[row.binanceNext,row.bybitNext,row.okxNext,row.mexcNext,row.kucoinNext].filter(Boolean);
+  if(!ts.length) return '—';
+  const diff=Math.min(...ts)-Date.now();
+  if(diff<=0) return '即將結算';
+  const h=Math.floor(diff/3600000), m=Math.floor((diff%3600000)/60000);
+  return `${h}h ${m}m`;
+}
+
+function renderEmpty(msg){
+  document.getElementById('cards').innerHTML=`<div class="empty-state">${msg}</div>`;
+  document.getElementById('table-body').innerHTML=`<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--red);font-family:var(--mono)">${msg}</td></tr>`;
+}
+
+function setStatus(state, text){
+  document.getElementById('dot').className='dot'+(state==='live'?' live':'');
+  document.getElementById('status-text').textContent=text;
+}
+
+// ─────────────────────────────────────
+// 啟動
+// ─────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>資金費率套利雷達 v3</title>
+<title>資金費率套利雷達 v4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet"/>
 <style>
@@ -12,18 +12,17 @@
   --border:#1e2d42;--border2:#263650;
   --text:#c8d8ea;--dim:#4a6380;--mute:#2a3f58;
   --accent:#00d4ff;--green:#00e676;--red:#ff4f6a;
-  --yellow:#ffc107;--orange:#ff8c00;--purple:#b39ddb;--teal:#26c6da;
-  --mono:'Space Mono',monospace;--sans:'Noto Sans TC',sans-serif;
-  --r:10px;
+  --yellow:#ffc107;--orange:#ff8c00;
+  --mono:'Space Mono',monospace;--sans:'Noto Sans TC',sans-serif;--r:10px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
 body::before{content:'';position:fixed;inset:0;
   background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
-  background-size:40px 40px;opacity:.15;pointer-events:none;z-index:0;}
+  background-size:40px 40px;opacity:.14;pointer-events:none;z-index:0;}
 
 /* ── Header ── */
-header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.94);backdrop-filter:blur(14px);
+header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.95);backdrop-filter:blur(14px);
   border-bottom:1px solid var(--border);padding:11px 16px;
   display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .logo{display:flex;align-items:center;gap:10px;}
@@ -32,7 +31,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.94);backdrop-f
   box-shadow:0 0 12px rgba(0,212,255,.2);}
 .logo h1{font-family:var(--mono);font-size:13px;color:#fff;letter-spacing:.5px;}
 .logo p{font-size:9px;color:var(--dim);letter-spacing:1px;margin-top:1px;}
-.hdr-right{display:flex;align-items:center;gap:7px;}
+.hdr-r{display:flex;align-items:center;gap:7px;}
 .pill{display:flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--border);
   border-radius:20px;padding:4px 10px;font-family:var(--mono);font-size:10px;color:var(--dim);}
 .dot{width:5px;height:5px;border-radius:50%;background:var(--mute);}
@@ -56,7 +55,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.94);backdrop-f
 .sv{font-size:18px;font-family:var(--mono);font-weight:700;color:#fff;margin-top:3px;}
 .ss{font-size:10px;color:var(--dim);margin-top:2px;}
 
-/* ── 摺疊區塊通用 ── */
+/* ── 摺疊區塊 ── */
 .section{margin:0 16px 10px;position:relative;z-index:10;}
 .sec-toggle{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);
   border-radius:var(--r);padding:11px 15px;display:flex;align-items:center;justify-content:space-between;
@@ -67,7 +66,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.94);backdrop-f
   border-radius:0 0 var(--r) var(--r);padding:15px;display:none;}
 .sec-body.show{display:block;}
 
-/* ── 計算器共用 ── */
+/* ── 表單元素 ── */
 .row{display:flex;align-items:center;gap:9px;margin-bottom:11px;flex-wrap:wrap;}
 .lbl{font-size:11px;color:var(--dim);min-width:68px;font-family:var(--mono);}
 .inp{flex:1;min-width:90px;background:var(--bg3);border:1px solid var(--border2);color:#fff;
@@ -76,9 +75,10 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.94);backdrop-f
 .sel{flex:1;background:var(--bg3);border:1px solid var(--border2);color:#fff;border-radius:6px;
   padding:7px 11px;font-family:var(--mono);font-size:11px;outline:none;appearance:none;cursor:pointer;}
 .unit{font-size:11px;color:var(--dim);font-family:var(--mono);}
-.result-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:13px;}
+
+/* ── 結果方塊 ── */
+.rbox{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:13px;}
 .rg2{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
-.rg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
 .ri{text-align:center;}
 .rl{font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;font-family:var(--mono);}
 .rv{font-size:14px;font-family:var(--mono);font-weight:700;margin-top:3px;}
@@ -117,78 +117,101 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.94);backdrop-f
 .card.h1{border-color:rgba(255,140,0,.45);}
 .card.h2{border-color:rgba(255,193,7,.35);}
 .card.h3{border-color:rgba(0,230,118,.28);}
-
-/* 卡片頂 */
 .ch{padding:11px 13px 9px;display:flex;align-items:center;justify-content:space-between;
   border-bottom:1px solid var(--border);cursor:pointer;user-select:none;}
-.cl{display:flex;align-items:center;gap:9px;}
+.cl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .crk{font-family:var(--mono);font-size:10px;color:var(--mute);min-width:16px;}
 .cn{font-family:var(--mono);font-weight:700;font-size:14px;color:#fff;}
 .ctag{font-size:9px;color:var(--dim);background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-family:var(--mono);}
-.cr{text-align:right;}
+.cr{text-align:right;flex-shrink:0;}
 .cspread{font-family:var(--mono);font-weight:700;font-size:13px;}
 .csl{font-size:9px;color:var(--dim);font-family:var(--mono);letter-spacing:1px;margin-top:1px;}
 
-/* 費率格 */
+/* 費率格子 */
 .cb{padding:9px 13px;}
 .rate-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
-.rb{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 7px;text-align:center;}
+.rb{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 8px;text-align:center;}
 .rb.mx{border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.06);}
 .rb.mn{border-color:rgba(255,79,106,.35);background:rgba(255,79,106,.05);}
 .rex{font-size:8px;font-family:var(--mono);font-weight:700;letter-spacing:.5px;margin-bottom:2px;}
 .rrate{font-size:11px;font-family:var(--mono);}
-.rprice{font-size:9px;font-family:var(--mono);color:var(--dim);margin-top:1px;}
+.rprice{font-size:10px;font-family:var(--mono);color:var(--accent);margin-top:2px;letter-spacing:.3px;}
 .rna{color:var(--mute);font-size:10px;}
 
-/* 卡片展開 */
+/* 展開區 */
 .cf{padding:0 13px;max-height:0;overflow:hidden;transition:max-height .35s ease,padding .3s;}
-.cf.open{max-height:800px;padding:11px 13px 14px;}
+.cf.open{max-height:1200px;padding:11px 13px 14px;}
 
-/* 標籤頁（Tab）*/
+/* Tab */
 .tabs{display:flex;gap:4px;margin-bottom:12px;}
 .tab{flex:1;padding:7px;text-align:center;font-family:var(--mono);font-size:10px;letter-spacing:.5px;
   background:var(--bg3);border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--dim);}
 .tab.active{background:rgba(0,212,255,.1);border-color:rgba(0,212,255,.35);color:var(--accent);}
 .tab-panel{display:none;}.tab-panel.show{display:block;}
 
-/* 價差區 */
-.price-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;}
-.price-table th{padding:5px 8px;font-size:9px;color:var(--dim);text-align:right;letter-spacing:1px;text-transform:uppercase;}
-.price-table th:first-child{text-align:left;}
-.price-table td{padding:6px 8px;border-top:1px solid var(--border);text-align:right;}
-.price-table td:first-child{text-align:left;}
-.pspread-pill{display:inline-block;padding:1px 7px;border-radius:3px;font-size:10px;font-family:var(--mono);font-weight:700;}
-.pspread-high{background:rgba(255,193,7,.15);color:var(--yellow);border:1px solid rgba(255,193,7,.3);}
-.pspread-low {background:rgba(0,230,118,.1); color:var(--green);border:1px solid rgba(0,230,118,.2);}
-.convergence-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px;margin-top:10px;}
-.conv-title{font-size:10px;color:var(--dim);font-family:var(--mono);letter-spacing:1px;margin-bottom:8px;}
-.conv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.conv-item{background:var(--bg4);border-radius:6px;padding:8px;text-align:center;}
-.conv-label{font-size:9px;color:var(--dim);font-family:var(--mono);letter-spacing:.5px;}
-.conv-val{font-size:13px;font-family:var(--mono);font-weight:700;margin-top:3px;}
+/* ── 價差面板 ── */
+.price-row{display:flex;align-items:center;justify-content:space-between;
+  padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;margin-bottom:6px;}
+.pr-ex{font-family:var(--mono);font-size:11px;font-weight:700;}
+.pr-price{font-family:var(--mono);font-size:12px;color:#fff;}
+.pr-diff{font-family:var(--mono);font-size:11px;font-weight:700;}
+.pr-diff.hi{color:var(--yellow);}
+.pr-diff.lo{color:var(--green);}
+.pr-diff.ref{color:var(--mute);font-size:10px;}
 
-/* 止盈止損區 */
-.tpsl-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
-.tpsl-group{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;}
-.tpsl-group-title{font-size:10px;font-family:var(--mono);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.tpsl-field{margin-bottom:7px;}
+/* 收斂/擴散計算 */
+.conv-card{border-radius:8px;padding:12px;margin-top:8px;}
+.conv-card.bullish{background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.2);}
+.conv-card.bearish{background:rgba(255,79,106,.07);border:1px solid rgba(255,79,106,.2);}
+.conv-title{font-size:10px;font-family:var(--mono);font-weight:700;letter-spacing:1px;margin-bottom:8px;}
+.conv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.conv-item{text-align:center;}
+.conv-label{font-size:9px;color:var(--dim);font-family:var(--mono);}
+.conv-val{font-size:14px;font-family:var(--mono);font-weight:700;margin-top:3px;}
+
+/* ── 止盈止損面板 ── */
+.tpsl-header{font-size:11px;color:var(--dim);font-family:var(--mono);line-height:1.7;margin-bottom:12px;}
+.tpsl-inputs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.tpsl-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px;}
+.tpsl-box-title{display:flex;align-items:center;gap:6px;margin-bottom:10px;}
+.tpsl-field{margin-bottom:8px;}
 .tpsl-field:last-child{margin-bottom:0;}
-.tpsl-label{font-size:9px;color:var(--dim);font-family:var(--mono);letter-spacing:.5px;margin-bottom:3px;}
+.tpsl-label{font-size:9px;color:var(--dim);font-family:var(--mono);letter-spacing:.5px;margin-bottom:4px;}
 .tpsl-inp{width:100%;background:var(--bg4);border:1px solid var(--border2);color:#fff;
-  border-radius:5px;padding:6px 9px;font-family:var(--mono);font-size:12px;outline:none;}
+  border-radius:5px;padding:7px 10px;font-family:var(--mono);font-size:12px;outline:none;}
 .tpsl-inp:focus{border-color:var(--accent);}
-.tpsl-result{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px;}
-.tpsl-result-title{font-size:10px;color:var(--dim);font-family:var(--mono);letter-spacing:1px;margin-bottom:9px;}
-.tpsl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.tpsl-card{background:var(--bg4);border-radius:7px;padding:9px;}
-.tpsl-card-title{font-size:9px;font-family:var(--mono);font-weight:700;margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--border);}
-.tpsl-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
-.tpsl-row:last-child{margin-bottom:0;}
+.tpsl-inp::placeholder{color:var(--mute);}
+.buf-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 11px;}
+.buf-label{font-size:11px;color:var(--dim);font-family:var(--mono);flex:1;}
+.buf-inp{width:70px;background:var(--bg4);border:1px solid var(--border2);color:var(--accent);
+  border-radius:5px;padding:5px 8px;font-family:var(--mono);font-size:12px;outline:none;text-align:center;}
+.buf-unit{font-size:11px;color:var(--dim);font-family:var(--mono);}
+
+/* 止盈止損結果卡片 */
+.tpsl-result{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;}
+.tpsl-result-title{font-size:10px;color:var(--dim);font-family:var(--mono);letter-spacing:1px;margin-bottom:10px;}
+.tpsl-pair-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.tpsl-side{background:var(--bg4);border-radius:7px;padding:10px;}
+.tpsl-side-title{font-size:10px;font-family:var(--mono);font-weight:700;padding-bottom:7px;margin-bottom:7px;border-bottom:1px solid var(--border);}
+.tpsl-line{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+.tpsl-line:last-child{margin-bottom:0;}
 .tpsl-key{font-size:9px;color:var(--dim);font-family:var(--mono);}
 .tpsl-val{font-size:11px;font-family:var(--mono);font-weight:700;}
-.tpsl-note{font-size:10px;color:var(--mute);margin-top:9px;line-height:1.65;font-family:var(--mono);}
+.tpsl-formula{font-size:8px;color:var(--mute);font-family:var(--mono);}
 
-/* 收益彙整 */
+/* 對稱出場說明 */
+.scenario-box{background:var(--bg4);border:1px solid var(--border2);border-radius:7px;padding:11px;margin-top:8px;}
+.scenario-title{font-size:10px;color:var(--accent);font-family:var(--mono);letter-spacing:1px;margin-bottom:8px;}
+.scenario-item{display:flex;gap:8px;margin-bottom:7px;align-items:flex-start;}
+.scenario-item:last-child{margin-bottom:0;}
+.scenario-icon{font-size:12px;flex-shrink:0;margin-top:1px;}
+.scenario-text{font-size:10px;color:var(--text);font-family:var(--mono);line-height:1.65;}
+.scenario-text b{color:var(--yellow);}
+.scenario-text .gval{color:var(--green);font-weight:700;}
+.scenario-text .rval{color:var(--red);font-weight:700;}
+
+/* 費率收益 */
 .earn-box{background:var(--bg4);border:1px solid var(--border2);border-radius:7px;padding:10px;}
 .earn-r{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
 .earn-r:last-child{margin-bottom:0;}
@@ -200,69 +223,60 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.94);backdrop-f
 .spinner{display:inline-block;width:22px;height:22px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ── 桌機版表格 ── */
+/* ── 桌機 ── */
 @media(min-width:768px){
-  header,
-  .stats      { padding-left:32px; padding-right:32px; }
-  .stats      { gap:12px; }
-  .sc         { flex:1; }
-  .section,
-  .filters,
-  .ex-chips,
-  .ex-st      { margin-left:32px; margin-right:32px; padding-left:0; padding-right:0; }
-  .cards      { display:none; }
-  .dtable-wrap{ display:block !important; padding:0 32px 60px; position:relative; z-index:10; }
-  table       { width:100%; border-collapse:collapse; }
-  thead tr    { background:var(--bg3); border-bottom:1px solid var(--border2); }
-  th          { padding:9px 11px; font-family:var(--mono); font-size:9px; letter-spacing:1.5px;
-                text-transform:uppercase; color:var(--dim); text-align:right; cursor:pointer; user-select:none; white-space:nowrap; }
-  th:first-child{ text-align:left; }
-  th:hover,th.srt{ color:var(--accent); }
-  tbody tr    { border-bottom:1px solid rgba(30,45,66,.5); transition:background .15s; }
-  tbody tr:hover{ background:rgba(0,212,255,.03); }
-  tbody tr.h1 { background:rgba(255,140,0,.04); }
-  tbody tr.h2 { background:rgba(255,193,7,.03); }
-  td          { padding:8px 11px; font-size:12px; text-align:right; white-space:nowrap; }
-  td:first-child{ text-align:left; }
-  .cc         { display:flex; align-items:center; gap:7px; }
-  .crk2       { font-family:var(--mono); font-size:10px; color:var(--mute); min-width:16px; text-align:right; }
-  .cn2        { font-family:var(--mono); font-weight:700; color:#fff; }
-  .ct2        { font-size:9px; color:var(--dim); background:var(--bg3); border:1px solid var(--border); border-radius:3px; padding:1px 4px; font-family:var(--mono); }
-  .rp         { color:var(--green); font-family:var(--mono); }
-  .rn         { color:var(--red);   font-family:var(--mono); }
-  .rz         { color:var(--mute);  font-family:var(--mono); }
-  .rna2       { color:var(--mute);  font-family:var(--mono); font-size:10px; }
-  .sw         { display:flex; align-items:center; gap:6px; justify-content:flex-end; }
-  .sbar       { height:3px; border-radius:2px; background:linear-gradient(90deg,var(--green),var(--orange)); }
+  header,.stats{padding-left:32px;padding-right:32px;}
+  .stats{gap:12px;}.sc{flex:1;}
+  .section,.filters,.ex-chips,.ex-st{margin-left:32px;margin-right:32px;padding-left:0;padding-right:0;}
+  .cards{display:none;}
+  .dtw{display:block !important;padding:0 32px 60px;position:relative;z-index:10;}
+  table{width:100%;border-collapse:collapse;}
+  thead tr{background:var(--bg3);border-bottom:1px solid var(--border2);}
+  th{padding:9px 11px;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);text-align:right;cursor:pointer;user-select:none;white-space:nowrap;}
+  th:first-child{text-align:left;}th:hover,th.srt{color:var(--accent);}
+  tbody tr{border-bottom:1px solid rgba(30,45,66,.5);transition:background .15s;}
+  tbody tr:hover{background:rgba(0,212,255,.03);}
+  tbody tr.h1{background:rgba(255,140,0,.04);}tbody tr.h2{background:rgba(255,193,7,.03);}
+  td{padding:8px 11px;font-size:11px;text-align:right;white-space:nowrap;}
+  td:first-child{text-align:left;}
+  .cc{display:flex;align-items:center;gap:7px;}
+  .crk2{font-family:var(--mono);font-size:10px;color:var(--mute);min-width:16px;text-align:right;}
+  .cn2{font-family:var(--mono);font-weight:700;color:#fff;}
+  .ct2{font-size:9px;color:var(--dim);background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:1px 4px;font-family:var(--mono);}
+  .rp{color:var(--green);font-family:var(--mono);}
+  .rn{color:var(--red);font-family:var(--mono);}
+  .rz{color:var(--mute);font-family:var(--mono);}
+  .rna2{color:var(--mute);font-family:var(--mono);font-size:10px;}
+  .sw{display:flex;align-items:center;gap:6px;justify-content:flex-end;}
+  .sbar{height:3px;border-radius:2px;background:linear-gradient(90deg,var(--green),var(--orange));}
 }
-.dtable-wrap{ display:none; }
-@media(max-width:767px){ .dtable-wrap{ display:none !important; } }
+.dtw{display:none;}
+@media(max-width:767px){.dtw{display:none !important;}}
 </style>
 </head>
 <body>
 <div class="progress" id="pbar"></div>
 
-<!-- Header -->
 <header>
   <div class="logo">
     <div class="logo-icon">📡</div>
-    <div><h1>FUNDING RADAR v3</h1><p>資金費率 · 價差 · 止盈止損</p></div>
+    <div><h1>FUNDING RADAR v4</h1><p>費率 · 價差 · 對稱止盈止損</p></div>
   </div>
-  <div class="hdr-right">
+  <div class="hdr-r">
     <div class="pill"><div class="dot" id="dot"></div><span id="stxt">載入中</span></div>
-    <button class="btn-sm" id="rbtn" onclick="loadData(true)">⟳</button>
+    <button class="btn-sm" id="rbtn" onclick="loadData()">⟳</button>
   </div>
 </header>
 
 <!-- 統計 -->
 <div class="stats">
   <div class="sc c-b"><div class="sl">幣種數</div><div class="sv" id="s1">—</div><div class="ss">USDT永續</div></div>
-  <div class="sc c-o"><div class="sl">套利機會</div><div class="sv" id="s2">—</div><div class="ss">扣費後有利</div></div>
+  <div class="sc c-o"><div class="sl">套利機會</div><div class="sv" id="s2">—</div><div class="ss">淨費差>門檻</div></div>
   <div class="sc c-g"><div class="sl">最大費差</div><div class="sv" id="s3">—</div><div class="ss" id="s3b">最高幣種</div></div>
   <div class="sc c-y"><div class="sl">最高年化</div><div class="sv" id="s4">—</div><div class="ss">淨值估算</div></div>
 </div>
 
-<!-- ① 資金費率計算器 -->
+<!-- 費率計算器 -->
 <div class="section">
   <button class="sec-toggle" id="t-earn" onclick="toggle('earn')">
     <span>💰 費率收益計算器</span><span class="arr">▼</span>
@@ -287,72 +301,10 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.94);backdrop-f
         <option value="1095">1095 週期（1年）</option>
       </select>
     </div>
-    <div class="result-box" id="earn-result">
+    <div class="rbox" id="earn-result">
       <div style="text-align:center;color:var(--dim);font-family:var(--mono);font-size:11px;">請先選擇套利組合</div>
     </div>
     <div class="note">⚠ 費率每8小時更新，僅供估算參考。不構成投資建議。</div>
-  </div>
-</div>
-
-<!-- ② 止盈止損計算器（獨立，不依賴卡片）-->
-<div class="section">
-  <button class="sec-toggle" id="t-tpsl" onclick="toggle('tpsl')">
-    <span>🎯 止盈止損計算器</span><span class="arr">▼</span>
-  </button>
-  <div class="sec-body" id="b-tpsl">
-    <div style="font-size:11px;color:var(--dim);font-family:var(--mono);margin-bottom:12px;line-height:1.7;">
-      填入你在兩個交易所的<b style="color:var(--text)">爆倉價格</b>，自動算出建議止盈止損點位。
-    </div>
-    <div class="tpsl-inputs">
-      <div class="tpsl-group">
-        <div class="tpsl-group-title"><span class="tag tag-short">做空倉</span></div>
-        <div class="tpsl-field">
-          <div class="tpsl-label">做空爆倉價</div>
-          <input class="tpsl-inp" id="g-short-liq" type="number" placeholder="例：70000" oninput="calcTPSL()"/>
-        </div>
-        <div class="tpsl-field">
-          <div class="tpsl-label">目前做空交易所</div>
-          <select class="sel" id="g-short-ex" style="width:100%;background:var(--bg4);border:1px solid var(--border2);color:#fff;border-radius:5px;padding:6px 9px;font-family:var(--mono);font-size:11px;" onchange="calcTPSL()">
-            <option value="">選擇交易所</option>
-            <option value="binance">Binance</option>
-            <option value="bybit">Bybit</option>
-            <option value="okx">OKX</option>
-            <option value="bitget">Bitget</option>
-            <option value="mexc">MEXC</option>
-            <option value="kucoin">KuCoin</option>
-          </select>
-        </div>
-      </div>
-      <div class="tpsl-group">
-        <div class="tpsl-group-title"><span class="tag tag-long">做多倉</span></div>
-        <div class="tpsl-field">
-          <div class="tpsl-label">做多爆倉價</div>
-          <input class="tpsl-inp" id="g-long-liq" type="number" placeholder="例：55000" oninput="calcTPSL()"/>
-        </div>
-        <div class="tpsl-field">
-          <div class="tpsl-label">目前做多交易所</div>
-          <select class="sel" id="g-long-ex" style="width:100%;background:var(--bg4);border:1px solid var(--border2);color:#fff;border-radius:5px;padding:6px 9px;font-family:var(--mono);font-size:11px;" onchange="calcTPSL()">
-            <option value="">選擇交易所</option>
-            <option value="binance">Binance</option>
-            <option value="bybit">Bybit</option>
-            <option value="okx">OKX</option>
-            <option value="bitget">Bitget</option>
-            <option value="mexc">MEXC</option>
-            <option value="kucoin">KuCoin</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <div id="tpsl-global-result">
-      <div style="text-align:center;color:var(--dim);font-family:var(--mono);font-size:11px;padding:10px;">
-        請輸入爆倉價格
-      </div>
-    </div>
-    <div class="note">
-      公式：做空止損 = 做空爆倉 × 0.99 ｜ 做空止盈 = 做多爆倉 × 0.995<br>
-      做多止盈 = 做多爆倉 × 0.995 ｜ 做多止損 = 做多爆倉 × 1.01<br>
-      ⚠ 止盈止損不代表保證成交，僅為建議觸發價位。
-    </div>
   </div>
 </div>
 
@@ -365,7 +317,6 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.94);backdrop-f
       <option value="0.0001">≥0.01%</option>
       <option value="0.0003" selected>≥0.03%</option>
       <option value="0.001">≥0.1%</option>
-      <option value="0.003">≥0.3%</option>
     </select>
   </div>
   <div class="fg"><span class="fl">排序</span>
@@ -393,7 +344,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.94);backdrop-f
 </div>
 
 <!-- 桌機表格 -->
-<div class="dtable-wrap" id="dtable">
+<div class="dtw" id="dtable">
   <table>
     <thead><tr>
       <th onclick="sortBy('symbol')">幣種</th>
@@ -417,8 +368,8 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.94);backdrop-f
 </div>
 
 <script>
-// ══ 常數 ══════════════════════════════
-const REFRESH=60, API='/api/funding';
+// ══ 常數 ══════════════════════════════════════════════
+const REFRESH=60,API='/api/funding';
 const FEES={binance:.0005,bybit:.0006,okx:.0005,bitget:.0006,mexc:.0002,kucoin:.0006};
 const EXL={binance:'Binance',bybit:'Bybit',okx:'OKX',bitget:'Bitget',mexc:'MEXC',kucoin:'KuCoin'};
 const EX_ALL=['binance','bybit','okx','bitget','mexc','kucoin'];
@@ -427,7 +378,7 @@ const EX_COLOR={binance:'#f0b90b',bybit:'#ff8c5a',okx:'#29b6f6',bitget:'#00d09c'
 let allData=[],visEx=new Set(EX_ALL),curSort='netSpread',sortAsc=false;
 let countdown=REFRESH,timer=null,loading=false;
 
-// ══ 載入 ══════════════════════════════
+// ══ 資料載入 ══════════════════════════════════════════
 async function loadData(){
   if(loading)return; loading=true;
   const btn=document.getElementById('rbtn');
@@ -435,7 +386,7 @@ async function loadData(){
   try{
     const r=await fetch(API+'?t='+Date.now());
     const j=await r.json();
-    if(!j.success) throw new Error(j.error||'server error');
+    if(!j.success)throw new Error(j.error||'server error');
     allData=j.data;
     renderExSt(j.exchangeStatus||{});
     updateStats(); applyFilters(); buildPairs();
@@ -447,24 +398,17 @@ async function loadData(){
   }
   loading=false; btn.disabled=false;
 }
-
-// ══ 倒數 ══════════════════════════════
 function startCD(){
   const bar=document.getElementById('pbar');
   bar.style.width='100%';
-  timer=setInterval(()=>{
-    countdown--;
-    bar.style.width=(countdown/REFRESH*100)+'%';
-    if(countdown<=0){clearInterval(timer);loadData();}
-  },1000);
+  timer=setInterval(()=>{countdown--;bar.style.width=(countdown/REFRESH*100)+'%';if(countdown<=0){clearInterval(timer);loadData();}},1000);
 }
 
-// ══ 統計 ══════════════════════════════
+// ══ 統計 ══════════════════════════════════════════════
 function updateStats(){
   const th=parseFloat(document.getElementById('threshold').value)||0;
-  const ops=allData.filter(d=>d.netSpread>th);
   document.getElementById('s1').textContent=allData.length;
-  document.getElementById('s2').textContent=ops.length;
+  document.getElementById('s2').textContent=allData.filter(d=>d.netSpread>th).length;
   if(allData[0]){
     const t=allData[0];
     document.getElementById('s3').textContent=(t.spread*100).toFixed(3)+'%';
@@ -472,19 +416,14 @@ function updateStats(){
     document.getElementById('s4').textContent=(t.netSpread*3*365*100).toFixed(0)+'%';
   }
 }
-
-// ══ 交易所狀態 ════════════════════════
 function renderExSt(st){
   document.getElementById('exst').innerHTML=EX_ALL.map(ex=>
     `<div class="est ${st[ex]==='ok'?'ok':'err'}">${st[ex]==='ok'?'●':'✕'} ${EXL[ex]}</div>`
   ).join('');
 }
-function toggleEx(ex,el){
-  visEx.has(ex)?visEx.delete(ex):visEx.add(ex);
-  el.classList.toggle('active'); applyFilters();
-}
+function toggleEx(ex,el){visEx.has(ex)?visEx.delete(ex):visEx.add(ex);el.classList.toggle('active');applyFilters();}
 
-// ══ 篩選/排序 ═════════════════════════
+// ══ 篩選/排序 ═════════════════════════════════════════
 function applyFilters(){
   const kw=document.getElementById('search').value.trim().toUpperCase();
   const th=parseFloat(document.getElementById('threshold').value)||0;
@@ -494,39 +433,37 @@ function applyFilters(){
     if(r.netSpread<th)return false;
     return EX_ALL.filter(e=>visEx.has(e)&&r[e]!==undefined).length>=2;
   });
-  rows.sort((a,b)=>{
-    const va=a[sk]??-Infinity,vb=b[sk]??-Infinity;
-    return sortAsc?va-vb:vb-va;
-  });
+  rows.sort((a,b)=>{const va=a[sk]??-Infinity,vb=b[sk]??-Infinity;return sortAsc?va-vb:vb-va;});
   renderCards(rows); renderTable(rows);
   document.getElementById('s2').textContent=rows.length;
 }
 function sortBy(k){
   curSort===k?sortAsc=!sortAsc:(curSort=k,sortAsc=false);
-  if(['netSpread','spread','priceDiffPct','annual'].includes(k))
-    document.getElementById('sortsel').value=k;
+  if(['netSpread','spread','priceDiffPct','annual'].includes(k))document.getElementById('sortsel').value=k;
   applyFilters();
 }
 
-// ══ 渲染：手機卡片 ════════════════════
+// ══ 渲染手機卡片 ══════════════════════════════════════
 function renderCards(rows){
   const el=document.getElementById('cards');
   if(!rows.length){el.innerHTML='<div class="empty">😶 無符合條件資料<br>試著降低門檻</div>';return;}
-  const maxS=rows[0]?.spread||1;
   el.innerHTML=rows.map((row,i)=>{
     const hot=i<1?'h1':i<2?'h2':i<3?'h3':'';
-    const sc=spreadColor(row.netSpread);
+    const sc=sColor(row.netSpread);
     const rateBoxes=EX_ALL.filter(e=>visEx.has(e)).map(ex=>{
       const isMax=ex===row.maxEx,isMin=ex===row.minEx;
-      const price=row.prices?.[ex];
+      const lp=row.prices?.[ex];  // Last Price
       return `<div class="rb ${isMax?'mx':isMin?'mn':''}">
         <div class="rex" style="color:${EX_COLOR[ex]}">${EXL[ex].toUpperCase()}</div>
         ${row[ex]!==undefined
-          ?`<div class="rrate ${row[ex]>1e-4?'rp':row[ex]<-1e-4?'rn':'rz'}">${row[ex]>=0?'+':''}${(row[ex]*100).toFixed(4)}%</div>
-            <div class="rprice">${price?fmtPrice(price):'—'}</div>`
+          ?`<div class="rrate ${row[ex]>1e-4?'g':row[ex]<-1e-4?'r':'rz'}">${row[ex]>=0?'+':''}${(row[ex]*100).toFixed(4)}%</div>
+            <div class="rprice">${lp?fP(lp):'—'}</div>`
           :`<div class="rna">—</div>`}
       </div>`;
     }).join('');
+    // 價差 badge
+    const pdBadge=row.priceDiffPct>0.0001
+      ?`<span style="font-family:var(--mono);font-size:9px;font-weight:700;padding:1px 7px;border-radius:3px;background:rgba(255,193,7,.12);color:var(--yellow);border:1px solid rgba(255,193,7,.25)">↕${(row.priceDiffPct*100).toFixed(3)}%</span>`:'';
 
     return `<div class="card ${hot}" id="card-${row.symbol}">
       <div class="ch" onclick="openCard('${row.symbol}')">
@@ -534,8 +471,7 @@ function renderCards(rows){
           <span class="crk">${i+1}</span>
           <span class="cn">${row.symbol}</span>
           <span class="ctag">PERP</span>
-          ${row.priceDiffPct!==null&&row.priceDiffPct>0.0001
-            ?`<span class="pspread-pill pspread-high" title="各交易所價格差距">${(row.priceDiffPct*100).toFixed(3)}%↕</span>`:'' }
+          ${pdBadge}
         </div>
         <div class="cr">
           <div class="cspread" style="color:${sc}">${(row.netSpread*100).toFixed(4)}%</div>
@@ -543,17 +479,15 @@ function renderCards(rows){
         </div>
       </div>
       <div class="cb"><div class="rate-grid">${rateBoxes}</div></div>
-      <div class="cf" id="cf-${row.symbol}">${buildCardDetail(row)}</div>
+      <div class="cf" id="cf-${row.symbol}">${buildDetail(row)}</div>
     </div>`;
   }).join('');
 }
 
-function openCard(sym){
-  const cf=document.getElementById('cf-'+sym);
-  cf.classList.toggle('open');
-}
+function openCard(sym){document.getElementById('cf-'+sym).classList.toggle('open');}
 
-function buildCardDetail(row){
+// ══ 卡片展開內容 ══════════════════════════════════════
+function buildDetail(row){
   const annual=(row.netSpread*3*365*100).toFixed(1);
   const next=bestNext(row);
   const amt=parseFloat(document.getElementById('c-amt')?.value)||1000;
@@ -561,196 +495,278 @@ function buildCardDetail(row){
   const earn=calcEarn(row,amt,periods);
   const be=Math.ceil(row.totalFee/row.spread);
 
-  // ── 價格表 ──
-  const priceRows=EX_ALL.filter(e=>visEx.has(e)&&row.prices?.[e]!==undefined).map(ex=>{
-    const p=row.prices[ex];
-    const diff=row.prices[row.priceMaxEx]!==undefined&&row.priceMaxEx!==ex
-      ?((p-row.prices[row.priceMaxEx])/row.prices[row.priceMaxEx]*100).toFixed(4):null;
-    return `<tr>
-      <td><span style="font-family:var(--mono);font-size:10px;font-weight:700;color:${EX_COLOR[ex]}">${EXL[ex]}</span></td>
-      <td style="font-family:var(--mono);font-size:11px;color:#fff">${fmtPrice(p)}</td>
-      <td>${diff!==null?`<span style="font-family:var(--mono);font-size:10px;color:${parseFloat(diff)>=0?'var(--green)':'var(--red)'}">${parseFloat(diff)>=0?'+':''}${diff}%</span>`:'<span style="color:var(--mute);font-size:10px">基準</span>'}</td>
-    </tr>`;
-  }).join('');
-
-  // ── 價差收斂/擴散說明 ──
-  let convHtml='';
-  if(row.priceDiffPct!==null&&row.priceDiffPct>0){
-    const spreadAmt=amt*row.priceDiffPct;
-    convHtml=`<div class="convergence-box">
-      <div class="conv-title">📐 價差 ${(row.priceDiffPct*100).toFixed(4)}% 對你的影響</div>
-      <div class="conv-grid">
-        <div class="conv-item">
-          <div class="conv-label">價差收斂（對你有利）</div>
-          <div class="conv-val g">+${spreadAmt.toFixed(2)} U</div>
-          <div style="font-size:9px;color:var(--dim);margin-top:2px;font-family:var(--mono)">做空交易所價格跌回做多水準</div>
-        </div>
-        <div class="conv-item">
-          <div class="conv-label">價差擴散（對你不利）</div>
-          <div class="conv-val r">-${spreadAmt.toFixed(2)} U</div>
-          <div style="font-size:9px;color:var(--dim);margin-top:2px;font-family:var(--mono)">做空交易所價格繼續上漲</div>
-        </div>
-      </div>
-    </div>`;
-  }
-
-  return `<div class="tabs">
-    <div class="tab active" onclick="switchTab(this,'tb-rate-${row.symbol}','${row.symbol}')">費率收益</div>
-    <div class="tab" onclick="switchTab(this,'tb-price-${row.symbol}','${row.symbol}')">交易所價格</div>
-    <div class="tab" onclick="switchTab(this,'tb-tpsl-${row.symbol}','${row.symbol}')">止盈止損</div>
+  return `
+  <div class="tabs">
+    <div class="tab active" onclick="swTab(this,'tr-${row.symbol}','${row.symbol}')">費率收益</div>
+    <div class="tab" onclick="swTab(this,'tp-${row.symbol}','${row.symbol}')">合約價差</div>
+    <div class="tab" onclick="swTab(this,'tt-${row.symbol}','${row.symbol}')">止盈止損</div>
   </div>
 
   <!-- 費率收益 -->
-  <div class="tab-panel show" id="tb-rate-${row.symbol}">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+  <div class="tab-panel show" id="tr-${row.symbol}">
+    <div class="rg2" style="margin-bottom:10px;">
       <div><div class="rl">建議做空</div><div style="margin-top:3px"><span class="tag tag-short">${EXL[row.maxEx]}</span></div></div>
       <div><div class="rl">建議做多</div><div style="margin-top:3px"><span class="tag tag-long">${EXL[row.minEx]}</span></div></div>
-      <div><div class="rl">年化估算</div><div class="rv y">${annual}%</div></div>
-      <div><div class="rl">下次結算</div><div class="rv" style="color:var(--dim)">${next}</div></div>
+      <div><div class="rl">年化（淨）</div><div class="rv y">${annual}%</div></div>
+      <div><div class="rl">下次結算</div><div class="rv" style="color:var(--dim);font-size:12px">${next}</div></div>
     </div>
     <div class="earn-box">
       <div class="earn-r"><span class="ek">投入 ${amt} USDT × ${periods} 週期</span></div>
       <div class="earn-r"><span class="ek">費率收入</span><span class="ev g">+${earn.income.toFixed(2)} U</span></div>
-      <div class="earn-r"><span class="ek">手續費</span><span class="ev r">-${earn.fee.toFixed(2)} U</span></div>
+      <div class="earn-r"><span class="ek">手續費（開+平）</span><span class="ev r">-${earn.fee.toFixed(2)} U</span></div>
       <div class="earn-r" style="border-top:1px solid var(--border);padding-top:5px;margin-top:3px;">
         <span class="ek" style="color:var(--text)">預估淨收益</span>
         <span class="ev ${earn.net>=0?'g':'r'}" style="font-size:14px">${earn.net>=0?'+':''}${earn.net.toFixed(2)} U</span>
       </div>
-      <div class="earn-r"><span class="ek">損益兩平</span><span class="ev a">${be} 週期（約${(be*8/24).toFixed(1)}天）</span></div>
+      <div class="earn-r"><span class="ek">損益兩平</span><span class="ev a">${be} 週期（≈${(be*8/24).toFixed(1)}天）</span></div>
     </div>
+    <div class="note">手續費：${EXL[row.maxEx]} ${(FEES[row.maxEx]*100).toFixed(3)}% + ${EXL[row.minEx]} ${(FEES[row.minEx]*100).toFixed(3)}% = 合計 ${(row.totalFee*100).toFixed(3)}%</div>
   </div>
 
-  <!-- 交易所價格 -->
-  <div class="tab-panel" id="tb-price-${row.symbol}">
-    <table class="price-table">
-      <thead><tr><th>交易所</th><th>價格（USDT）</th><th>vs 最高價</th></tr></thead>
-      <tbody>${priceRows}</tbody>
-    </table>
-    ${convHtml}
-    <div class="note" style="margin-top:8px">
-      💡 套利時若做空交易所價格偏高，結算前價差收斂會為你帶來額外獲利；若繼續擴散則損失額外金額。
-    </div>
+  <!-- 合約價差 -->
+  <div class="tab-panel" id="tp-${row.symbol}">
+    ${buildPricePanel(row,amt)}
   </div>
 
   <!-- 止盈止損 -->
-  <div class="tab-panel" id="tb-tpsl-${row.symbol}">
+  <div class="tab-panel" id="tt-${row.symbol}">
     ${buildTPSLPanel(row)}
   </div>`;
 }
 
+// ── 合約價差面板 ──────────────────────────────────────
+function buildPricePanel(row,amt){
+  const available=EX_ALL.filter(e=>visEx.has(e)&&row.prices?.[e]!==undefined);
+  if(available.length<2) return '<div style="color:var(--dim);font-family:var(--mono);font-size:11px;padding:10px;">無足夠價格資料</div>';
+
+  // 以做空交易所為「較貴」，做多交易所為「較便宜」
+  const shortEx=row.maxEx; const longEx=row.minEx;
+  const shortPrice=row.prices?.[shortEx]; const longPrice=row.prices?.[longEx];
+  const hasBothPrices=shortPrice&&longPrice;
+  const actualDiffPct=hasBothPrices?(shortPrice-longPrice)/longPrice:null;
+  const actualDiffAmt=hasBothPrices?(shortPrice-longPrice)/longPrice*amt:null;
+
+  // 各交易所價格行
+  const basePrice=row.prices[row.priceMaxEx];
+  const priceRows=available.map(ex=>{
+    const p=row.prices[ex];
+    const diff=basePrice?(p-basePrice)/basePrice*100:0;
+    const isRef=ex===row.priceMaxEx;
+    return `<div class="price-row">
+      <span class="pr-ex" style="color:${EX_COLOR[ex]}">${EXL[ex]}</span>
+      <span class="pr-price">${fP(p)}</span>
+      <span class="pr-diff ${isRef?'ref':diff>0?'hi':'lo'}">${isRef?'基準':((diff>=0?'+':'')+diff.toFixed(4)+'%')}</span>
+    </div>`;
+  }).join('');
+
+  // 套利方向說明
+  const directionNote=hasBothPrices&&actualDiffPct!==null?`
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:10px;margin-bottom:8px;">
+      <div style="font-size:10px;color:var(--dim);font-family:var(--mono);letter-spacing:1px;margin-bottom:6px;">📌 你的套利方向</div>
+      <div style="font-size:11px;font-family:var(--mono);line-height:1.8;color:var(--text);">
+        做空 <b style="color:var(--red)">${EXL[shortEx]}</b>（合約價 ${fP(shortPrice)}）<br>
+        做多 <b style="color:var(--green)">${EXL[longEx]}</b>（合約價 ${fP(longPrice)}）<br>
+        <span style="color:var(--yellow)">現在做空方比做多方貴 <b>${(Math.abs(actualDiffPct)*100).toFixed(4)}%</b></span>
+      </div>
+    </div>`:''
+
+  // 收斂/擴散計算（只在有兩邊價格時顯示）
+  const convHtml=hasBothPrices&&actualDiffAmt!==null?`
+    <div class="conv-card bullish">
+      <div class="conv-title" style="color:var(--green)">✅ 價差收斂（對你有利）</div>
+      <div class="conv-grid">
+        <div class="conv-item">
+          <div class="conv-label">額外獲利</div>
+          <div class="conv-val g">+${Math.abs(actualDiffAmt).toFixed(2)} U</div>
+        </div>
+        <div class="conv-item">
+          <div class="conv-label">情境說明</div>
+          <div style="font-size:9px;color:var(--dim);font-family:var(--mono);margin-top:4px;line-height:1.6">
+            ${EXL[shortEx]}合約價跌回<br>與${EXL[longEx]}相同水準
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="conv-card bearish" style="margin-top:6px;">
+      <div class="conv-title" style="color:var(--red)">❌ 價差擴散（對你不利）</div>
+      <div class="conv-grid">
+        <div class="conv-item">
+          <div class="conv-label">額外損失</div>
+          <div class="conv-val r">-${Math.abs(actualDiffAmt).toFixed(2)} U</div>
+        </div>
+        <div class="conv-item">
+          <div class="conv-label">情境說明</div>
+          <div style="font-size:9px;color:var(--dim);font-family:var(--mono);margin-top:4px;line-height:1.6">
+            ${EXL[shortEx]}合約價繼續<br>遠離${EXL[longEx]}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note" style="margin-top:8px;">
+      💡 以上基於投入 ${amt} U 計算。結算時若價差剛好完全收斂則獲得最大額外收益，反之則損失。實際價格收斂不保證在一次結算內完成。
+    </div>`:'<div class="note">部分交易所無價格資料，無法計算收斂/擴散損益。</div>';
+
+  return directionNote+priceRows+convHtml;
+}
+
+// ── 止盈止損面板 ──────────────────────────────────────
 function buildTPSLPanel(row){
-  return `<div style="font-size:11px;color:var(--dim);font-family:var(--mono);margin-bottom:10px;line-height:1.7">
-    填入你在此幣種的<b style="color:var(--text)">爆倉價格</b>，自動計算止盈止損。
+  const sp=row.prices?.[row.maxEx];  // 做空方參考價
+  const lp=row.prices?.[row.minEx];  // 做多方參考價
+  const sugShortLiq=sp?Math.round(sp*1.18):'' ;  // 建議範本：比現價高18%
+  const sugLongLiq =lp?Math.round(lp*0.82):'' ;  // 建議範本：比現價低18%
+
+  return `
+  <div class="tpsl-header">
+    設定你在兩邊的<b style="color:var(--text)">爆倉價</b>和<b style="color:var(--text)">緩衝比例</b>，<br>
+    系統自動算出「對稱出場」止盈止損點位。
   </div>
-  <div class="tpsl-inputs">
-    <div class="tpsl-group">
-      <div class="tpsl-group-title"><span class="tag tag-short">做空（${EXL[row.maxEx]}）</span></div>
+
+  <div class="buf-row">
+    <span class="buf-label">🛡️ 安全緩衝（距爆倉多遠觸發）</span>
+    <input class="buf-inp" id="buf-${row.symbol}" type="number" value="5" min="1" max="20" oninput="calcTPSL('${row.symbol}')"/>
+    <span class="buf-unit">%</span>
+  </div>
+
+  <div class="tpsl-inputs-grid">
+    <div class="tpsl-box">
+      <div class="tpsl-box-title"><span class="tag tag-short">做空倉</span><span style="font-family:var(--mono);font-size:10px;color:var(--dim)">${EXL[row.maxEx]}</span></div>
       <div class="tpsl-field">
-        <div class="tpsl-label">做空爆倉價</div>
+        <div class="tpsl-label">做空爆倉價 ↑</div>
         <input class="tpsl-inp" id="sl-${row.symbol}" type="number"
-          placeholder="${row.prices?.[row.maxEx]?Math.round(row.prices[row.maxEx]*1.15):''}"
-          oninput="calcCardTPSL('${row.symbol}')"/>
+          placeholder="${sugShortLiq||'例：70000'}" oninput="calcTPSL('${row.symbol}')"/>
+      </div>
+      <div style="font-size:9px;color:var(--mute);font-family:var(--mono);margin-top:4px;">
+        現價參考：${sp?fP(sp):'—'}
       </div>
     </div>
-    <div class="tpsl-group">
-      <div class="tpsl-group-title"><span class="tag tag-long">做多（${EXL[row.minEx]}）</span></div>
+    <div class="tpsl-box">
+      <div class="tpsl-box-title"><span class="tag tag-long">做多倉</span><span style="font-family:var(--mono);font-size:10px;color:var(--dim)">${EXL[row.minEx]}</span></div>
       <div class="tpsl-field">
-        <div class="tpsl-label">做多爆倉價</div>
+        <div class="tpsl-label">做多爆倉價 ↓</div>
         <input class="tpsl-inp" id="ll-${row.symbol}" type="number"
-          placeholder="${row.prices?.[row.minEx]?Math.round(row.prices[row.minEx]*0.85):''}"
-          oninput="calcCardTPSL('${row.symbol}')"/>
+          placeholder="${sugLongLiq||'例：55000'}" oninput="calcTPSL('${row.symbol}')"/>
+      </div>
+      <div style="font-size:9px;color:var(--mute);font-family:var(--mono);margin-top:4px;">
+        現價參考：${lp?fP(lp):'—'}
       </div>
     </div>
   </div>
+
   <div id="tpsl-r-${row.symbol}">
-    <div style="text-align:center;color:var(--dim);font-family:var(--mono);font-size:11px;padding:8px;">
-      請輸入爆倉價格
+    <div style="text-align:center;color:var(--dim);font-family:var(--mono);font-size:11px;padding:10px;">
+      ↑ 請輸入爆倉價格
     </div>
   </div>`;
 }
 
-function calcCardTPSL(sym){
+function calcTPSL(sym){
   const shortLiq=parseFloat(document.getElementById('sl-'+sym)?.value);
   const longLiq =parseFloat(document.getElementById('ll-'+sym)?.value);
-  const el=document.getElementById('tpsl-r-'+sym);
-  renderTPSLResult(el,shortLiq,longLiq);
-}
-
-// ── 全局止盈止損計算器 ──
-function calcTPSL(){
-  const shortLiq=parseFloat(document.getElementById('g-short-liq')?.value);
-  const longLiq =parseFloat(document.getElementById('g-long-liq')?.value);
-  const el=document.getElementById('tpsl-global-result');
-  renderTPSLResult(el,shortLiq,longLiq);
-}
-
-function renderTPSLResult(el,shortLiq,longLiq){
+  const buf     =(parseFloat(document.getElementById('buf-'+sym)?.value)||5)/100;
+  const el      =document.getElementById('tpsl-r-'+sym);
   if(!shortLiq&&!longLiq){
-    el.innerHTML='<div style="text-align:center;color:var(--dim);font-family:var(--mono);font-size:11px;padding:8px;">請輸入爆倉價格</div>';
+    el.innerHTML='<div style="text-align:center;color:var(--dim);font-family:var(--mono);font-size:11px;padding:10px;">↑ 請輸入爆倉價格</div>';
     return;
   }
-  // 公式
-  const shortSL = shortLiq ? shortLiq*0.99   : null;  // 做空止損
-  const shortTP = longLiq  ? longLiq *0.995  : null;  // 做空止盈（做多爆倉×0.995）
-  const longTP  = longLiq  ? longLiq *0.995  : null;  // 做多止盈
-  const longSL  = longLiq  ? longLiq *1.01   : null;  // 做多止損
+  const row=allData.find(r=>r.symbol===sym);
 
-  const f=v=>v?fmtPrice(v):'—';
+  // ── 止損：距爆倉還有 buf% 時先出場 ──
+  // 做空止損：價格「漲」到爆倉前 buf%
+  const shortSL = shortLiq ? shortLiq*(1-buf) : null;
+  // 做多止損：價格「跌」到爆倉前 buf%
+  const longSL  = longLiq  ? longLiq *(1+buf) : null;
+
+  // ── 止盈：另一邊接近爆倉時，這一邊止盈 ──
+  // 做空止盈：價格「跌」到接近做多爆倉的 buf% 前 → 做空大賺，同步平倉
+  const shortTP = longLiq  ? longLiq *(1+buf) : null;
+  // 做多止盈：價格「漲」到接近做空爆倉的 buf% 前 → 做多大賺，同步平倉
+  const longTP  = shortLiq ? shortLiq*(1-buf) : null;
+
+  const f=v=>v?fP(v):'—';
+  const sp=row?.prices?.[row?.maxEx];
+  const lp=row?.prices?.[row?.minEx];
+  const shortDist=sp&&shortSL?((shortLiq-sp)/sp*100).toFixed(1):null;
+  const longDist =lp&&longSL ?((lp-longLiq)/lp*100).toFixed(1):null;
+
   el.innerHTML=`
     <div class="tpsl-result">
-      <div class="tpsl-result-title">📌 建議止盈止損點位</div>
-      <div class="tpsl-grid">
-        <div class="tpsl-card">
-          <div class="tpsl-card-title" style="color:var(--red)">做空倉</div>
-          <div class="tpsl-row">
-            <span class="tpsl-key">止損價</span>
-            <span class="tpsl-val r">${f(shortSL)}</span>
+      <div class="tpsl-result-title">📌 對稱出場點位（緩衝 ${(buf*100).toFixed(0)}%）</div>
+      <div class="tpsl-pair-grid">
+        <div class="tpsl-side">
+          <div class="tpsl-side-title" style="color:var(--red)">做空倉（${row?EXL[row.maxEx]:'做空'}）</div>
+          <div class="tpsl-line">
+            <span class="tpsl-key">🔴 止損價</span>
+            <div style="text-align:right">
+              <span class="tpsl-val r">${f(shortSL)}</span>
+              <div class="tpsl-formula">爆倉 × ${(1-buf).toFixed(3)}</div>
+            </div>
           </div>
-          <div class="tpsl-row">
-            <span class="tpsl-key">止損公式</span>
-            <span style="font-size:9px;color:var(--mute);font-family:var(--mono)">爆倉×0.99</span>
+          <div class="tpsl-line">
+            <span class="tpsl-key">🟢 止盈價</span>
+            <div style="text-align:right">
+              <span class="tpsl-val g">${f(shortTP)}</span>
+              <div class="tpsl-formula">做多爆倉 × ${(1+buf).toFixed(3)}</div>
+            </div>
           </div>
-          <div class="divider"></div>
-          <div class="tpsl-row">
-            <span class="tpsl-key">止盈價</span>
-            <span class="tpsl-val g">${f(shortTP)}</span>
-          </div>
-          <div class="tpsl-row">
-            <span class="tpsl-key">止盈公式</span>
-            <span style="font-size:9px;color:var(--mute);font-family:var(--mono)">做多爆倉×0.995</span>
-          </div>
+          ${shortDist?`<div class="tpsl-formula" style="margin-top:5px;color:var(--dim)">距止損還有 ${shortDist}%</div>`:''}
         </div>
-        <div class="tpsl-card">
-          <div class="tpsl-card-title" style="color:var(--green)">做多倉</div>
-          <div class="tpsl-row">
-            <span class="tpsl-key">止損價</span>
-            <span class="tpsl-val r">${f(longSL)}</span>
+        <div class="tpsl-side">
+          <div class="tpsl-side-title" style="color:var(--green)">做多倉（${row?EXL[row.minEx]:'做多'}）</div>
+          <div class="tpsl-line">
+            <span class="tpsl-key">🔴 止損價</span>
+            <div style="text-align:right">
+              <span class="tpsl-val r">${f(longSL)}</span>
+              <div class="tpsl-formula">爆倉 × ${(1+buf).toFixed(3)}</div>
+            </div>
           </div>
-          <div class="tpsl-row">
-            <span class="tpsl-key">止損公式</span>
-            <span style="font-size:9px;color:var(--mute);font-family:var(--mono)">爆倉×1.01</span>
+          <div class="tpsl-line">
+            <span class="tpsl-key">🟢 止盈價</span>
+            <div style="text-align:right">
+              <span class="tpsl-val g">${f(longTP)}</span>
+              <div class="tpsl-formula">做空爆倉 × ${(1-buf).toFixed(3)}</div>
+            </div>
           </div>
-          <div class="divider"></div>
-          <div class="tpsl-row">
-            <span class="tpsl-key">止盈價</span>
-            <span class="tpsl-val g">${f(longTP)}</span>
-          </div>
-          <div class="tpsl-row">
-            <span class="tpsl-key">止盈公式</span>
-            <span style="font-size:9px;color:var(--mute);font-family:var(--mono)">爆倉×0.995</span>
-          </div>
+          ${longDist?`<div class="tpsl-formula" style="margin-top:5px;color:var(--dim)">距止損還有 ${longDist}%</div>`:''}
         </div>
       </div>
-      ${shortLiq&&longLiq?`
-      <div class="divider"></div>
-      <div style="font-size:10px;color:var(--dim);font-family:var(--mono);line-height:1.8;">
-        🎯 做空倉：價格跌到 <b style="color:var(--green)">${f(shortTP)}</b> 時止盈（做多快爆倉）；漲到 <b style="color:var(--red)">${f(shortSL)}</b> 時止損（比爆倉提前 1%）<br>
-        🎯 做多倉：價格跌到 <b style="color:var(--green)">${f(longTP)}</b> 時止盈；漲到 <b style="color:var(--red)">${f(longSL)}</b> 時止損（比爆倉提前 1%）
-      </div>`:''}
+
+      <div class="scenario-box">
+        <div class="scenario-title">⚡ 4 種觸發情境（兩邊同步出場）</div>
+        ${shortSL?`<div class="scenario-item">
+          <span class="scenario-icon">🔴</span>
+          <div class="scenario-text">
+            <b>情境 A：做空被軋</b> — 價格漲到 <span class="rval">${f(shortSL)}</span>，做空止損出場，<b>同時做多也平倉</b>，避免裸多單繼續虧損。
+          </div>
+        </div>`:''}
+        ${longSL?`<div class="scenario-item">
+          <span class="scenario-icon">🔴</span>
+          <div class="scenario-text">
+            <b>情境 B：做多被打</b> — 價格跌到 <span class="rval">${f(longSL)}</span>，做多止損出場，<b>同時做空也平倉</b>，避免裸空單繼續虧損。
+          </div>
+        </div>`:''}
+        ${shortTP&&longLiq?`<div class="scenario-item">
+          <span class="scenario-icon">🟢</span>
+          <div class="scenario-text">
+            <b>情境 C：做空大賺</b> — 價格跌到 <span class="gval">${f(shortTP)}</span>（接近做多爆倉），做空止盈，<b>同時做多也平倉鎖利</b>。
+          </div>
+        </div>`:''}
+        ${longTP&&shortLiq?`<div class="scenario-item">
+          <span class="scenario-icon">🟢</span>
+          <div class="scenario-text">
+            <b>情境 D：做多大賺</b> — 價格漲到 <span class="gval">${f(longTP)}</span>（接近做空爆倉），做多止盈，<b>同時做空也平倉鎖利</b>。
+          </div>
+        </div>`:''}
+      </div>
+
+      <div class="note" style="margin-top:8px;">
+        ⚠ 「兩邊同步出場」需手動在兩個交易所分別操作，此工具僅顯示建議價位。<br>
+        ⚠ 緩衝 ${(buf*100).toFixed(0)}% 代表在距爆倉還有 ${(buf*100).toFixed(0)}% 時觸發，可依自身槓桿調整（建議 3%~10%）。
+      </div>
     </div>`;
 }
 
-// ══ 桌機表格 ══════════════════════════
+// ══ 桌機表格 ══════════════════════════════════════════
 function renderTable(rows){
   const tbody=document.getElementById('tbody');
   if(!rows.length){
@@ -761,43 +777,40 @@ function renderTable(rows){
   tbody.innerHTML=rows.map((row,i)=>{
     const bw=Math.min((row.spread/maxS)*50,50);
     const annual=(row.netSpread*3*365*100).toFixed(1);
-    const sc=spreadColor(row.netSpread);
-    const pspread=row.priceDiffPct!==null?(row.priceDiffPct*100).toFixed(4)+'%':'—';
+    const sc=sColor(row.netSpread);
+    const pd=row.priceDiffPct!==null?(row.priceDiffPct*100).toFixed(4)+'%':'—';
     return `<tr class="${i<1?'h1':i<2?'h2':''}">
       <td><div class="cc"><span class="crk2">${i+1}</span><span class="cn2">${row.symbol}</span><span class="ct2">PERP</span></div></td>
       <td><div class="sw"><span style="font-family:var(--mono);font-weight:700;color:${sc}">${(row.netSpread*100).toFixed(4)}%</span><div class="sbar" style="width:${bw}px"></div></div></td>
       <td style="color:var(--yellow);font-family:var(--mono)">${annual}%</td>
-      <td><span class="${row.priceDiffPct>0.0003?'pspread-pill pspread-high':'pspread-pill pspread-low'}">${pspread}</span></td>
-      ${EX_ALL.map(ex=>`<td>${dtCell(row[ex],ex===row.maxEx,ex===row.minEx)}</td>`).join('')}
+      <td><span style="font-family:var(--mono);font-size:10px;color:${row.priceDiffPct>0.0003?'var(--yellow)':'var(--dim)'}">${pd}</span></td>
+      ${EX_ALL.map(ex=>{
+        const lp=row.prices?.[ex];
+        const rate=row[ex];
+        return `<td><div style="text-align:right">
+          ${rate!==undefined?`<div class="${rate>1e-4?'rp':rate<-1e-4?'rn':'rz'}">${rate>=0?'+':''}${(rate*100).toFixed(4)}%</div>`:'<span class="rna2">—</span>'}
+          ${lp?`<div style="font-family:var(--mono);font-size:9px;color:var(--accent)">${fP(lp)}</div>`:''}
+        </div></td>`;
+      }).join('')}
       <td style="font-family:var(--mono);font-size:10px;color:var(--dim)">${bestNext(row)}</td>
     </tr>`;
   }).join('');
 }
 
-function dtCell(v,isMax,isMin){
-  if(v===undefined||v===null) return '<span class="rna2">—</span>';
-  const pct=(v*100).toFixed(4);
-  const cls=v>1e-4?'rp':v<-1e-4?'rn':'rz';
-  const extra=isMax?'font-weight:700;':isMin?'opacity:.7;':'';
-  return `<span class="${cls}" style="${extra}font-family:var(--mono)">${v>=0?'+':''}${pct}%</span>`;
-}
-
-// ══ 費率計算器 ════════════════════════
+// ══ 費率計算器 ════════════════════════════════════════
 function buildPairs(){
   const sel=document.getElementById('c-pair');
   sel.innerHTML='<option value="">── 選擇套利組合 ──</option>'+
     allData.slice(0,60).map(r=>`<option value="${r.symbol}">${r.symbol} ${EXL[r.maxEx]}空/${EXL[r.minEx]}多 淨${(r.netSpread*100).toFixed(4)}%</option>`).join('');
   updateEarnCalc();
 }
-
 function updateEarnCalc(){
   const sym=document.getElementById('c-pair')?.value;
   const amt=parseFloat(document.getElementById('c-amt')?.value)||0;
   const periods=parseFloat(document.getElementById('c-period')?.value)||3;
   const el=document.getElementById('earn-result');
   if(!sym||!amt){el.innerHTML='<div style="text-align:center;color:var(--dim);font-family:var(--mono);font-size:11px;">請先選擇套利組合並輸入金額</div>';return;}
-  const row=allData.find(r=>r.symbol===sym);
-  if(!row)return;
+  const row=allData.find(r=>r.symbol===sym);if(!row)return;
   const e=calcEarn(row,amt,periods);
   const annual=(row.netSpread*3*365*100).toFixed(1);
   const be=Math.ceil(row.totalFee/row.spread);
@@ -809,24 +822,23 @@ function updateEarnCalc(){
       <div class="ri"><div class="rl">年化報酬</div><div class="rv y">${annual}%</div></div>
     </div>
     <div class="note">
-      做空 <b style="color:var(--text)">${EXL[row.maxEx]}</b> (${(FEES[row.maxEx]*100).toFixed(3)}%) + 做多 <b style="color:var(--text)">${EXL[row.minEx]}</b> (${(FEES[row.minEx]*100).toFixed(3)}%) = 共 ${(row.totalFee*100).toFixed(3)}%<br>
-      損益兩平：${be} 週期（約 ${(be*8/24).toFixed(1)} 天）
+      ${EXL[row.maxEx]} ${(FEES[row.maxEx]*100).toFixed(3)}% + ${EXL[row.minEx]} ${(FEES[row.minEx]*100).toFixed(3)}% = 合計 ${(row.totalFee*100).toFixed(3)}%<br>
+      損益兩平：${be} 週期（≈${(be*8/24).toFixed(1)} 天）
     </div>`;
 }
 
-// ══ 工具 ══════════════════════════════
+// ══ 工具函式 ══════════════════════════════════════════
 function calcEarn(row,amt,periods){
-  const income=amt*row.spread*periods;
-  const fee=amt*row.totalFee;
+  const income=amt*row.spread*periods,fee=amt*row.totalFee;
   return{income,fee,net:income-fee};
 }
-function fmtPrice(p){
-  if(!p)return'—';
-  return p>=1000?p.toLocaleString('en-US',{maximumFractionDigits:1}):p.toPrecision(5);
+function fP(p){
+  if(!p||isNaN(p))return'—';
+  return p>=10000?p.toLocaleString('en-US',{maximumFractionDigits:0}):
+         p>=100  ?p.toLocaleString('en-US',{maximumFractionDigits:2}):
+         p>=1    ?p.toFixed(4):p.toPrecision(4);
 }
-function spreadColor(ns){
-  return ns>=0.001?'var(--orange)':ns>=0.0003?'var(--yellow)':'var(--green)';
-}
+function sColor(ns){return ns>=0.001?'var(--orange)':ns>=0.0003?'var(--yellow)':'var(--green)';}
 function bestNext(row){
   const ts=[row.binanceNext,row.bybitNext,row.okxNext,row.mexcNext,row.kucoinNext].filter(Boolean);
   if(!ts.length)return'—';
@@ -842,10 +854,10 @@ function toggle(id){
   document.getElementById('b-'+id).classList.toggle('show');
   document.getElementById('t-'+id).classList.toggle('open');
 }
-function switchTab(el,panelId,sym){
-  const card=document.getElementById('cf-'+sym);
-  card.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  card.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('show'));
+function swTab(el,panelId,sym){
+  const cf=document.getElementById('cf-'+sym);
+  cf.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  cf.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('show'));
   el.classList.add('active');
   document.getElementById(panelId).classList.add('show');
 }
@@ -854,7 +866,7 @@ function showEmpty(msg){
   document.getElementById('tbody').innerHTML=`<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--red);font-family:var(--mono)">${msg}</td></tr>`;
 }
 
-// ══ 啟動 ══════════════════════════════
+// ══ 啟動 ══════════════════════════════════════════════
 loadData();
 </script>
 </body>

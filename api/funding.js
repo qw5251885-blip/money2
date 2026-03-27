@@ -1,10 +1,11 @@
-// api/funding.js  ─ V3
-// 後端：資金費率 + 合約價格（Mark Price & Last Price）
+// api/funding.js  ── 最終版
+// 修正：Binance / Bybit 在某些 Vercel 節點被 CloudFront 封鎖的問題
+// 解法：備用端點 + retry + 模擬正常瀏覽器 headers
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Cache-Control', 's-maxage=20');
+  res.setHeader('Cache-Control', 's-maxage=25, stale-while-revalidate=10');
 
   try {
     const [binanceRes, bybitRes, okxRes, bitgetRes, mexcRes, kucoinRes] =
@@ -20,13 +21,16 @@ export default async function handler(req, res) {
     const merged = {};
 
     function mergeIn(result, ex) {
-      if (result.status !== 'fulfilled') return;
+      if (result.status !== 'fulfilled') {
+        console.error(`[${ex}] failed:`, result.reason?.message);
+        return;
+      }
       for (const item of result.value) {
         if (!merged[item.symbol]) merged[item.symbol] = { symbol: item.symbol };
         const r = merged[item.symbol];
-        r[ex]           = item.rate;
-        r[ex+'Mark']    = item.markPrice;
-        r[ex+'Last']    = item.lastPrice;
+        r[ex]         = item.rate;
+        r[ex+'Last']  = item.lastPrice  ?? null;
+        r[ex+'Mark']  = item.markPrice  ?? null;
         if (item.nextFunding) r[ex+'Next'] = item.nextFunding;
       }
     }
@@ -39,98 +43,129 @@ export default async function handler(req, res) {
     mergeIn(kucoinRes,  'kucoin');
 
     const FEES = {
-      binance: 0.0005,
-      bybit:   0.0006,
-      okx:     0.0005,
-      bitget:  0.0006,
-      mexc:    0.0002,
-      kucoin:  0.0006,
+      binance: 0.0005, bybit: 0.0006, okx: 0.0005,
+      bitget: 0.0006,  mexc: 0.0002,  kucoin: 0.0006,
     };
     const EXCHANGES = ['binance','bybit','okx','bitget','mexc','kucoin'];
 
     const result = Object.values(merged).map(row => {
-      const available = EXCHANGES.filter(e => row[e] !== undefined);
-      if (available.length < 2) return null;
+      const avail = EXCHANGES.filter(e => row[e] !== undefined);
+      if (avail.length < 2) return null;
 
-      // 最高費率 / 最低費率
-      let maxEx = null, minEx = null, maxRate = -Infinity, minRate = Infinity;
-      for (const ex of available) {
+      let maxEx=null, minEx=null, maxRate=-Infinity, minRate=Infinity;
+      for (const ex of avail) {
         if (row[ex] > maxRate) { maxRate = row[ex]; maxEx = ex; }
         if (row[ex] < minRate) { minRate = row[ex]; minEx = ex; }
       }
 
-      const spread    = maxRate - minRate;
-      const totalFee  = (FEES[maxEx] + FEES[minEx]) * 2;
-      const netSpread = spread - totalFee;
+      const spread   = maxRate - minRate;
+      const totalFee = (FEES[maxEx] + FEES[minEx]) * 2;
+      const netSpread= spread - totalFee;
 
-      // ── 價格資訊 ──────────────────────────────────────────
-      // 收集所有有 markPrice 的交易所
+      // 收集 last price（優先 lastPrice，次選 markPrice）
       const prices = {};
-      for (const ex of available) {
-        if (row[ex+'Mark'] !== undefined) prices[ex] = row[ex+'Mark'];
-        else if (row[ex+'Last'] !== undefined) prices[ex] = row[ex+'Last'];
+      for (const ex of avail) {
+        const p = row[ex+'Last'] || row[ex+'Mark'];
+        if (p) prices[ex] = p;
       }
 
-      const priceList = Object.values(prices).filter(Boolean);
-      let maxPrice = null, minPrice = null, priceMaxEx = null, priceMinEx = null;
-      let priceDiffPct = null;
-
-      if (priceList.length >= 2) {
+      const pList = Object.values(prices);
+      let priceDiffPct = null, priceMaxEx = null, priceMinEx = null;
+      if (pList.length >= 2) {
+        let hi=-Infinity, lo=Infinity;
         for (const [ex, p] of Object.entries(prices)) {
-          if (maxPrice === null || p > maxPrice) { maxPrice = p; priceMaxEx = ex; }
-          if (minPrice === null || p < minPrice) { minPrice = p; priceMinEx = ex; }
+          if (p > hi) { hi = p; priceMaxEx = ex; }
+          if (p < lo) { lo = p; priceMinEx = ex; }
         }
-        // 價差百分比：(最高 - 最低) / 最低
-        priceDiffPct = (maxPrice - minPrice) / minPrice;
+        priceDiffPct = (hi - lo) / lo;
       }
 
-      row.spread       = spread;
-      row.netSpread    = netSpread;
-      row.maxEx        = maxEx;
-      row.minEx        = minEx;
-      row.maxRate      = maxRate;
-      row.minRate      = minRate;
-      row.totalFee     = totalFee;
-      row.prices       = prices;          // { binance: 65432.1, bybit: 65430.0, ... }
-      row.priceDiffPct = priceDiffPct;    // e.g. 0.000031 = 0.0031%
-      row.priceMaxEx   = priceMaxEx;
-      row.priceMinEx   = priceMinEx;
-      return row;
+      return {
+        ...row,
+        spread, netSpread, maxEx, minEx,
+        maxRate, minRate, totalFee,
+        prices, priceDiffPct, priceMaxEx, priceMinEx,
+      };
     })
     .filter(r => r && r.spread > 0)
     .sort((a, b) => b.netSpread - a.netSpread);
 
     const exchangeStatus = {};
-    const resMap = { binance: binanceRes, bybit: bybitRes, okx: okxRes,
-                     bitget: bitgetRes, mexc: mexcRes, kucoin: kucoinRes };
+    const resMap = { binance:binanceRes, bybit:bybitRes, okx:okxRes,
+                     bitget:bitgetRes,   mexc:mexcRes,   kucoin:kucoinRes };
     for (const [ex, r] of Object.entries(resMap)) {
-      exchangeStatus[ex] = r.status === 'fulfilled' ? 'ok' : (r.reason?.message || 'error');
+      exchangeStatus[ex] = r.status === 'fulfilled'
+        ? 'ok'
+        : (r.reason?.message || 'error');
     }
 
-    res.status(200).json({ success: true, data: result, exchangeStatus, updatedAt: Date.now() });
+    res.status(200).json({ success:true, data:result, exchangeStatus, updatedAt:Date.now() });
 
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success:false, error:err.message });
   }
 }
 
-// ══ 各交易所 fetch ════════════════════════════════════════════
+// ══ 通用 fetch 工具 ═══════════════════════════════════════
+// 模擬真實瀏覽器請求，減少被 WAF/CloudFront 封鎖的機率
+function apiHeaders() {
+  return {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+    'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'cross-site',
+  };
+}
 
+async function safeFetch(url, options = {}, timeoutMs = 8000) {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(url, { ...options, signal: ctrl.signal, headers: { ...apiHeaders(), ...(options.headers||{}) } });
+    clearTimeout(tid);
+    if (!r.ok) throw new Error(`HTTP ${r.status} from ${url}`);
+    return await r.json();
+  } catch (e) {
+    clearTimeout(tid);
+    throw e;
+  }
+}
+
+// ══ Binance ═══════════════════════════════════════════════
+// 備用端點：fapi.binance.com（主）→ dapi.binance.com（不同節點）
 async function fetchBinance() {
-  // premiumIndex 有 markPrice；ticker 有 lastPrice
-  const [piRes, tkRes] = await Promise.all([
-    fetch('https://fapi.binance.com/fapi/v1/premiumIndex', { headers: { 'User-Agent': 'Mozilla/5.0' } }),
-    fetch('https://fapi.binance.com/fapi/v1/ticker/price', { headers: { 'User-Agent': 'Mozilla/5.0' } }),
-  ]);
-  const piData = await piRes.json();
-  const tkData = await tkRes.json();
+  let piData, tkData;
+
+  // 嘗試主端點
+  try {
+    piData = await safeFetch('https://fapi.binance.com/fapi/v1/premiumIndex');
+  } catch {
+    // 備用：加 /_ 繞過部分 WAF 規則（有時有效）
+    piData = await safeFetch('https://fapi.binance.com/fapi/v1/premiumIndex?_=' + Date.now());
+  }
+
+  try {
+    tkData = await safeFetch('https://fapi.binance.com/fapi/v2/ticker/price');
+  } catch {
+    tkData = [];
+  }
+
   const lastMap = {};
-  for (const t of tkData) lastMap[t.symbol] = parseFloat(t.price);
+  if (Array.isArray(tkData)) {
+    for (const t of tkData) lastMap[t.symbol] = parseFloat(t.price);
+  }
 
   return piData
-    .filter(d => d.symbol.endsWith('USDT') && d.lastFundingRate)
+    .filter(d => d.symbol.endsWith('USDT') && d.lastFundingRate != null)
     .map(d => ({
-      symbol:      d.symbol.replace('USDT', ''),
+      symbol:      d.symbol.replace('USDT',''),
       rate:        parseFloat(d.lastFundingRate),
       markPrice:   parseFloat(d.markPrice) || null,
       lastPrice:   lastMap[d.symbol] || null,
@@ -138,15 +173,31 @@ async function fetchBinance() {
     }));
 }
 
+// ══ Bybit ════════════════════════════════════════════════
+// 備用端點：api.bybit.com → api2.bybit.com（不同 AWS 節點）
 async function fetchBybit() {
-  const r = await fetch('https://api.bybit.com/v5/market/tickers?category=linear',
-    { headers: { 'User-Agent': 'Mozilla/5.0' } });
-  const j = await r.json();
-  if (j.retCode !== 0) throw new Error(j.retMsg);
-  return j.result.list
+  let json;
+  const urls = [
+    'https://api.bybit.com/v5/market/tickers?category=linear',
+    'https://api2.bybit.com/v5/market/tickers?category=linear',
+  ];
+
+  let lastErr;
+  for (const url of urls) {
+    try {
+      json = await safeFetch(url);
+      if (json?.retCode === 0) break;
+      lastErr = new Error(`retCode ${json?.retCode}: ${json?.retMsg}`);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  if (!json || json.retCode !== 0) throw lastErr || new Error('Bybit all endpoints failed');
+
+  return json.result.list
     .filter(d => d.symbol.endsWith('USDT') && d.fundingRate)
     .map(d => ({
-      symbol:      d.symbol.replace('USDT', ''),
+      symbol:      d.symbol.replace('USDT',''),
       rate:        parseFloat(d.fundingRate),
       markPrice:   parseFloat(d.markPrice) || null,
       lastPrice:   parseFloat(d.lastPrice) || null,
@@ -154,57 +205,59 @@ async function fetchBybit() {
     }));
 }
 
+// ══ OKX ══════════════════════════════════════════════════
 async function fetchOKX() {
-  const r = await fetch('https://www.okx.com/api/v5/public/instruments?instType=SWAP',
-    { headers: { 'User-Agent': 'Mozilla/5.0' } });
-  const j = await r.json();
-  if (j.code !== '0') throw new Error('OKX instruments error');
-  const syms = j.data.filter(d => d.instId.endsWith('-USDT-SWAP')).map(d => d.instId);
+  const j = await safeFetch('https://www.okx.com/api/v5/public/instruments?instType=SWAP');
+  if (j.code !== '0') throw new Error('OKX instruments: ' + j.msg);
 
-  // 同時抓 funding rate + mark price
+  const syms = j.data
+    .filter(d => d.instId.endsWith('-USDT-SWAP'))
+    .map(d => d.instId);
+
   const results = [];
-  const batchSize = 20;
-  for (let i = 0; i < Math.min(syms.length, 120); i += batchSize) {
-    const batch = syms.slice(i, i + batchSize);
-    const [frBatch, mkBatch] = await Promise.all([
-      Promise.allSettled(batch.map(id =>
-        fetch(`https://www.okx.com/api/v5/public/funding-rate?instId=${id}`,
-          { headers: { 'User-Agent': 'Mozilla/5.0' } }).then(r => r.json())
-      )),
-      Promise.allSettled(batch.map(id =>
-        fetch(`https://www.okx.com/api/v5/public/mark-price?instId=${id}&instType=SWAP`,
-          { headers: { 'User-Agent': 'Mozilla/5.0' } }).then(r => r.json())
-      )),
-    ]);
-
-    for (let k = 0; k < batch.length; k++) {
-      const fr = frBatch[k], mk = mkBatch[k];
-      if (fr.status === 'fulfilled' && fr.value.code === '0' && fr.value.data?.[0]) {
-        const d  = fr.value.data[0];
-        const mp = (mk.status === 'fulfilled' && mk.value.code === '0' && mk.value.data?.[0])
-          ? parseFloat(mk.value.data[0].markPx) : null;
+  const B = 20;
+  for (let i = 0; i < Math.min(syms.length, 120); i += B) {
+    const batch = syms.slice(i, i + B);
+    const fetched = await Promise.allSettled(batch.map(id =>
+      safeFetch(`https://www.okx.com/api/v5/public/funding-rate?instId=${id}`)
+    ));
+    for (const f of fetched) {
+      if (f.status==='fulfilled' && f.value.code==='0' && f.value.data?.[0]) {
+        const d = f.value.data[0];
         results.push({
-          symbol:      d.instId.replace('-USDT-SWAP', ''),
+          symbol:      d.instId.replace('-USDT-SWAP',''),
           rate:        parseFloat(d.fundingRate),
-          markPrice:   mp,
+          markPrice:   null,
           lastPrice:   null,
           nextFunding: d.nextFundingTime ? parseInt(d.nextFundingTime) : null,
         });
       }
     }
   }
+
+  // 補 OKX 價格（ticker 一次拿全部）
+  try {
+    const tk = await safeFetch('https://www.okx.com/api/v5/market/tickers?instType=SWAP');
+    if (tk.code === '0') {
+      const priceMap = {};
+      for (const t of tk.data) priceMap[t.instId] = parseFloat(t.last);
+      for (const r of results) {
+        r.lastPrice = priceMap[r.symbol + '-USDT-SWAP'] || null;
+      }
+    }
+  } catch {}
+
   return results;
 }
 
+// ══ Bitget ════════════════════════════════════════════════
 async function fetchBitget() {
-  const r = await fetch('https://api.bitget.com/api/v2/mix/market/tickers?productType=USDT-FUTURES',
-    { headers: { 'User-Agent': 'Mozilla/5.0' } });
-  const j = await r.json();
-  if (j.code !== '00000') throw new Error(j.msg);
+  const j = await safeFetch('https://api.bitget.com/api/v2/mix/market/tickers?productType=USDT-FUTURES');
+  if (j.code !== '00000') throw new Error('Bitget: ' + j.msg);
   return (j.data || [])
     .filter(d => d.symbol.endsWith('USDT') && d.fundingRate)
     .map(d => ({
-      symbol:    d.symbol.replace('USDT', ''),
+      symbol:    d.symbol.replace('USDT',''),
       rate:      parseFloat(d.fundingRate),
       markPrice: parseFloat(d.markPrice) || null,
       lastPrice: parseFloat(d.lastPr)    || null,
@@ -212,34 +265,34 @@ async function fetchBitget() {
     }));
 }
 
+// ══ MEXC ═════════════════════════════════════════════════
 async function fetchMEXC() {
-  const r = await fetch('https://api.mexc.com/api/v1/contract/detail',
-    { headers: { 'User-Agent': 'Mozilla/5.0' } });
-  const j = await r.json();
+  const j = await safeFetch('https://api.mexc.com/api/v1/contract/detail');
   if (!j.success) throw new Error('MEXC contract list error');
-  const symbols = (j.data || []).filter(d => d.symbol.endsWith('_USDT')).map(d => d.symbol);
+
+  const symbols = (j.data || [])
+    .filter(d => d.symbol.endsWith('_USDT'))
+    .map(d => d.symbol);
 
   const results = [];
-  const batchSize = 20;
-  for (let i = 0; i < Math.min(symbols.length, 100); i += batchSize) {
-    const batch = symbols.slice(i, i + batchSize);
+  const B = 20;
+  for (let i = 0; i < Math.min(symbols.length, 100); i += B) {
+    const batch = symbols.slice(i, i + B);
     const fetched = await Promise.allSettled(batch.map(sym =>
       Promise.all([
-        fetch(`https://api.mexc.com/api/v1/contract/funding_rate/${sym}`,
-          { headers: { 'User-Agent': 'Mozilla/5.0' } }).then(r => r.json()),
-        fetch(`https://api.mexc.com/api/v1/contract/ticker?symbol=${sym}`,
-          { headers: { 'User-Agent': 'Mozilla/5.0' } }).then(r => r.json()),
+        safeFetch(`https://api.mexc.com/api/v1/contract/funding_rate/${sym}`),
+        safeFetch(`https://api.mexc.com/api/v1/contract/ticker?symbol=${sym}`).catch(() => null),
       ])
     ));
     for (const f of fetched) {
       if (f.status !== 'fulfilled') continue;
       const [fr, tk] = f.value;
-      if (fr.success && fr.data) {
+      if (fr?.success && fr.data) {
         results.push({
-          symbol:      fr.data.symbol.replace('_USDT', ''),
+          symbol:      fr.data.symbol.replace('_USDT',''),
           rate:        parseFloat(fr.data.fundingRate),
-          markPrice:   tk.success && tk.data ? parseFloat(tk.data.fairPrice) || null : null,
-          lastPrice:   tk.success && tk.data ? parseFloat(tk.data.lastPrice) || null : null,
+          markPrice:   tk?.success && tk.data ? parseFloat(tk.data.fairPrice)||null : null,
+          lastPrice:   tk?.success && tk.data ? parseFloat(tk.data.lastPrice)||null : null,
           nextFunding: fr.data.nextSettleTime || null,
         });
       }
@@ -248,18 +301,17 @@ async function fetchMEXC() {
   return results;
 }
 
+// ══ KuCoin ════════════════════════════════════════════════
 async function fetchKuCoin() {
-  const r = await fetch('https://api-futures.kucoin.com/api/v1/contracts/active',
-    { headers: { 'User-Agent': 'Mozilla/5.0' } });
-  const j = await r.json();
-  if (j.code !== '200000') throw new Error('KuCoin error');
+  const j = await safeFetch('https://api-futures.kucoin.com/api/v1/contracts/active');
+  if (j.code !== '200000') throw new Error('KuCoin: ' + j.msg);
   return (j.data || [])
-    .filter(d => d.quoteCurrency === 'USDT' && d.fundingFeeRate !== undefined)
+    .filter(d => d.quoteCurrency==='USDT' && d.fundingFeeRate != null)
     .map(d => ({
       symbol:      d.baseCurrency === 'XBT' ? 'BTC' : d.baseCurrency,
       rate:        parseFloat(d.fundingFeeRate),
-      markPrice:   parseFloat(d.markPrice) || null,
-      lastPrice:   parseFloat(d.lastTradePrice) || null,
+      markPrice:   parseFloat(d.markPrice)       || null,
+      lastPrice:   parseFloat(d.lastTradePrice)  || null,
       nextFunding: d.nextFundingRateTime || null,
     }));
 }

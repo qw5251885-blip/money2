@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>資金費率套利雷達 v4</title>
+<title>資金費率套利雷達 v5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet"/>
 <style>
@@ -66,7 +66,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.95);backdrop-f
   border-radius:0 0 var(--r) var(--r);padding:15px;display:none;}
 .sec-body.show{display:block;}
 
-/* ── 表單元素 ── */
+/* ── 表單 ── */
 .row{display:flex;align-items:center;gap:9px;margin-bottom:11px;flex-wrap:wrap;}
 .lbl{font-size:11px;color:var(--dim);min-width:68px;font-family:var(--mono);}
 .inp{flex:1;min-width:90px;background:var(--bg3);border:1px solid var(--border2);color:#fff;
@@ -76,7 +76,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.95);backdrop-f
   padding:7px 11px;font-family:var(--mono);font-size:11px;outline:none;appearance:none;cursor:pointer;}
 .unit{font-size:11px;color:var(--dim);font-family:var(--mono);}
 
-/* ── 結果方塊 ── */
+/* ── 共用結果 ── */
 .rbox{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:13px;}
 .rg2{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
 .ri{text-align:center;}
@@ -138,9 +138,9 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.95);backdrop-f
 .rprice{font-size:10px;font-family:var(--mono);color:var(--accent);margin-top:2px;letter-spacing:.3px;}
 .rna{color:var(--mute);font-size:10px;}
 
-/* 展開區 */
+/* 展開 */
 .cf{padding:0 13px;max-height:0;overflow:hidden;transition:max-height .35s ease,padding .3s;}
-.cf.open{max-height:1200px;padding:11px 13px 14px;}
+.cf.open{max-height:1400px;padding:11px 13px 14px;}
 
 /* Tab */
 .tabs{display:flex;gap:4px;margin-bottom:12px;}
@@ -149,17 +149,21 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.95);backdrop-f
 .tab.active{background:rgba(0,212,255,.1);border-color:rgba(0,212,255,.35);color:var(--accent);}
 .tab-panel{display:none;}.tab-panel.show{display:block;}
 
-/* ── 價差面板 ── */
-.price-row{display:flex;align-items:center;justify-content:space-between;
-  padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;margin-bottom:6px;}
-.pr-ex{font-family:var(--mono);font-size:11px;font-weight:700;}
-.pr-price{font-family:var(--mono);font-size:12px;color:#fff;}
-.pr-diff{font-family:var(--mono);font-size:11px;font-weight:700;}
-.pr-diff.hi{color:var(--yellow);}
-.pr-diff.lo{color:var(--green);}
-.pr-diff.ref{color:var(--mute);font-size:10px;}
+/* 費率收益 */
+.earn-box{background:var(--bg4);border:1px solid var(--border2);border-radius:7px;padding:10px;}
+.earn-r{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.earn-r:last-child{margin-bottom:0;}
+.ek{font-size:10px;color:var(--dim);font-family:var(--mono);}
+.ev{font-size:11px;font-family:var(--mono);font-weight:700;}
 
-/* 收斂/擴散計算 */
+/* ── 合約價差面板 ── */
+.price-row{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;margin-bottom:6px;}
+.pr-left{display:flex;align-items:center;gap:8px;}
+.pr-ex{font-family:var(--mono);font-size:11px;font-weight:700;}
+.pr-dir{font-size:9px;padding:1px 5px;border-radius:3px;font-family:var(--mono);font-weight:700;}
+.pr-price{font-family:var(--mono);font-size:12px;color:#fff;font-weight:700;}
+.pr-diff{font-family:var(--mono);font-size:10px;font-weight:700;}
 .conv-card{border-radius:8px;padding:12px;margin-top:8px;}
 .conv-card.bullish{background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.2);}
 .conv-card.bearish{background:rgba(255,79,106,.07);border:1px solid rgba(255,79,106,.2);}
@@ -167,56 +171,69 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.95);backdrop-f
 .conv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .conv-item{text-align:center;}
 .conv-label{font-size:9px;color:var(--dim);font-family:var(--mono);}
-.conv-val{font-size:14px;font-family:var(--mono);font-weight:700;margin-top:3px;}
+.conv-val{font-size:15px;font-family:var(--mono);font-weight:700;margin-top:3px;}
 
 /* ── 止盈止損面板 ── */
-.tpsl-header{font-size:11px;color:var(--dim);font-family:var(--mono);line-height:1.7;margin-bottom:12px;}
-.tpsl-inputs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-.tpsl-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px;}
-.tpsl-box-title{display:flex;align-items:center;gap:6px;margin-bottom:10px;}
-.tpsl-field{margin-bottom:8px;}
-.tpsl-field:last-child{margin-bottom:0;}
-.tpsl-label{font-size:9px;color:var(--dim);font-family:var(--mono);letter-spacing:.5px;margin-bottom:4px;}
-.tpsl-inp{width:100%;background:var(--bg4);border:1px solid var(--border2);color:#fff;
+/* 槓桿/緩衝設定列 */
+.setting-bar{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap;}
+.setting-box{flex:1;min-width:120px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;padding:9px 11px;display:flex;align-items:center;gap:8px;}
+.setting-label{font-size:10px;color:var(--dim);font-family:var(--mono);white-space:nowrap;flex-shrink:0;}
+.setting-inp{flex:1;background:var(--bg4);border:1px solid var(--border2);color:var(--accent);
+  border-radius:5px;padding:4px 8px;font-family:var(--mono);font-size:13px;font-weight:700;
+  outline:none;text-align:center;width:50px;min-width:0;}
+.setting-inp:focus{border-color:var(--accent);}
+.setting-unit{font-size:10px;color:var(--dim);font-family:var(--mono);}
+
+/* 理論爆倉距離提示 */
+.liq-hint{background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);
+  border-radius:7px;padding:9px 12px;margin-bottom:12px;
+  font-family:var(--mono);font-size:10px;line-height:1.8;color:var(--dim);}
+.liq-hint b{color:var(--accent);}
+
+/* 爆倉輸入 2欄 */
+.liq-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.liq-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;}
+.liq-box-title{display:flex;align-items:center;gap:6px;margin-bottom:9px;}
+.liq-field-label{font-size:9px;color:var(--dim);font-family:var(--mono);letter-spacing:.5px;margin-bottom:4px;}
+.liq-field-hint{font-size:8px;color:var(--mute);font-family:var(--mono);margin-top:3px;}
+.liq-inp{width:100%;background:var(--bg4);border:1px solid var(--border2);color:#fff;
   border-radius:5px;padding:7px 10px;font-family:var(--mono);font-size:12px;outline:none;}
-.tpsl-inp:focus{border-color:var(--accent);}
-.tpsl-inp::placeholder{color:var(--mute);}
-.buf-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;
-  background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 11px;}
-.buf-label{font-size:11px;color:var(--dim);font-family:var(--mono);flex:1;}
-.buf-inp{width:70px;background:var(--bg4);border:1px solid var(--border2);color:var(--accent);
-  border-radius:5px;padding:5px 8px;font-family:var(--mono);font-size:12px;outline:none;text-align:center;}
-.buf-unit{font-size:11px;color:var(--dim);font-family:var(--mono);}
+.liq-inp:focus{border-color:var(--accent);}
+.liq-inp::placeholder{color:var(--mute);}
 
-/* 止盈止損結果卡片 */
-.tpsl-result{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;}
+/* 止盈止損結果 */
+.tpsl-result{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:4px;}
 .tpsl-result-title{font-size:10px;color:var(--dim);font-family:var(--mono);letter-spacing:1px;margin-bottom:10px;}
-.tpsl-pair-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
-.tpsl-side{background:var(--bg4);border-radius:7px;padding:10px;}
-.tpsl-side-title{font-size:10px;font-family:var(--mono);font-weight:700;padding-bottom:7px;margin-bottom:7px;border-bottom:1px solid var(--border);}
-.tpsl-line{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
-.tpsl-line:last-child{margin-bottom:0;}
-.tpsl-key{font-size:9px;color:var(--dim);font-family:var(--mono);}
-.tpsl-val{font-size:11px;font-family:var(--mono);font-weight:700;}
-.tpsl-formula{font-size:8px;color:var(--mute);font-family:var(--mono);}
 
-/* 對稱出場說明 */
-.scenario-box{background:var(--bg4);border:1px solid var(--border2);border-radius:7px;padding:11px;margin-top:8px;}
-.scenario-title{font-size:10px;color:var(--accent);font-family:var(--mono);letter-spacing:1px;margin-bottom:8px;}
-.scenario-item{display:flex;gap:8px;margin-bottom:7px;align-items:flex-start;}
-.scenario-item:last-child{margin-bottom:0;}
-.scenario-icon{font-size:12px;flex-shrink:0;margin-top:1px;}
-.scenario-text{font-size:10px;color:var(--text);font-family:var(--mono);line-height:1.65;}
-.scenario-text b{color:var(--yellow);}
-.scenario-text .gval{color:var(--green);font-weight:700;}
-.scenario-text .rval{color:var(--red);font-weight:700;}
+/* 兩欄：做空 / 做多 */
+.tpsl-cols{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.tpsl-col{background:var(--bg4);border-radius:7px;padding:10px;}
+.tpsl-col-title{font-size:10px;font-family:var(--mono);font-weight:700;
+  padding-bottom:7px;margin-bottom:8px;border-bottom:1px solid var(--border);}
 
-/* 費率收益 */
-.earn-box{background:var(--bg4);border:1px solid var(--border2);border-radius:7px;padding:10px;}
-.earn-r{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
-.earn-r:last-child{margin-bottom:0;}
-.ek{font-size:10px;color:var(--dim);font-family:var(--mono);}
-.ev{font-size:11px;font-family:var(--mono);font-weight:700;}
+/* 每個點位行 */
+.tpsl-pt{background:var(--bg5);border-radius:6px;padding:8px 9px;margin-bottom:6px;}
+.tpsl-pt:last-child{margin-bottom:0;}
+.tpsl-pt-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+.tpsl-pt-name{font-size:9px;color:var(--dim);font-family:var(--mono);display:flex;align-items:center;gap:4px;}
+.tpsl-pt-price{font-size:13px;font-family:var(--mono);font-weight:700;}
+.tpsl-pt-bottom{display:flex;justify-content:space-between;align-items:center;}
+.tpsl-pt-formula{font-size:8px;color:var(--mute);font-family:var(--mono);}
+.tpsl-pt-dist{font-size:9px;font-family:var(--mono);}
+
+/* 情境說明卡 */
+.scenario-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;}
+.scenario-card{background:var(--bg4);border-radius:7px;padding:9px;}
+.scenario-card.loss{border:1px solid rgba(255,79,106,.2);}
+.scenario-card.win {border:1px solid rgba(0,230,118,.2);}
+.scenario-title-row{display:flex;align-items:center;gap:5px;margin-bottom:6px;}
+.scenario-icon{font-size:14px;}
+.scenario-name{font-size:10px;font-family:var(--mono);font-weight:700;}
+.scenario-desc{font-size:9px;color:var(--dim);font-family:var(--mono);line-height:1.65;}
+.scenario-desc b{color:var(--text);}
+.scenario-desc .gv{color:var(--green);font-weight:700;}
+.scenario-desc .rv{color:var(--red);font-weight:700;}
 
 /* 空/載入 */
 .empty{padding:50px 20px;text-align:center;color:var(--dim);font-family:var(--mono);font-size:12px;line-height:2;}
@@ -232,7 +249,8 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.95);backdrop-f
   .dtw{display:block !important;padding:0 32px 60px;position:relative;z-index:10;}
   table{width:100%;border-collapse:collapse;}
   thead tr{background:var(--bg3);border-bottom:1px solid var(--border2);}
-  th{padding:9px 11px;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);text-align:right;cursor:pointer;user-select:none;white-space:nowrap;}
+  th{padding:9px 11px;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
+     color:var(--dim);text-align:right;cursor:pointer;user-select:none;white-space:nowrap;}
   th:first-child{text-align:left;}th:hover,th.srt{color:var(--accent);}
   tbody tr{border-bottom:1px solid rgba(30,45,66,.5);transition:background .15s;}
   tbody tr:hover{background:rgba(0,212,255,.03);}
@@ -260,7 +278,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.95);backdrop-f
 <header>
   <div class="logo">
     <div class="logo-icon">📡</div>
-    <div><h1>FUNDING RADAR v4</h1><p>費率 · 價差 · 對稱止盈止損</p></div>
+    <div><h1>FUNDING RADAR v5</h1><p>費率 · 價差 · 非對稱止盈止損</p></div>
   </div>
   <div class="hdr-r">
     <div class="pill"><div class="dot" id="dot"></div><span id="stxt">載入中</span></div>
@@ -369,7 +387,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,.95);backdrop-f
 
 <script>
 // ══ 常數 ══════════════════════════════════════════════
-const REFRESH=60,API='/api/funding';
+const REFRESH=60, API='/api/funding';
 const FEES={binance:.0005,bybit:.0006,okx:.0005,bitget:.0006,mexc:.0002,kucoin:.0006};
 const EXL={binance:'Binance',bybit:'Bybit',okx:'OKX',bitget:'Bitget',mexc:'MEXC',kucoin:'KuCoin'};
 const EX_ALL=['binance','bybit','okx','bitget','mexc','kucoin'];
@@ -404,7 +422,6 @@ function startCD(){
   timer=setInterval(()=>{countdown--;bar.style.width=(countdown/REFRESH*100)+'%';if(countdown<=0){clearInterval(timer);loadData();}},1000);
 }
 
-// ══ 統計 ══════════════════════════════════════════════
 function updateStats(){
   const th=parseFloat(document.getElementById('threshold').value)||0;
   document.getElementById('s1').textContent=allData.length;
@@ -443,7 +460,7 @@ function sortBy(k){
   applyFilters();
 }
 
-// ══ 渲染手機卡片 ══════════════════════════════════════
+// ══ 手機卡片 ══════════════════════════════════════════
 function renderCards(rows){
   const el=document.getElementById('cards');
   if(!rows.length){el.innerHTML='<div class="empty">😶 無符合條件資料<br>試著降低門檻</div>';return;}
@@ -452,7 +469,7 @@ function renderCards(rows){
     const sc=sColor(row.netSpread);
     const rateBoxes=EX_ALL.filter(e=>visEx.has(e)).map(ex=>{
       const isMax=ex===row.maxEx,isMin=ex===row.minEx;
-      const lp=row.prices?.[ex];  // Last Price
+      const lp=row.prices?.[ex];
       return `<div class="rb ${isMax?'mx':isMin?'mn':''}">
         <div class="rex" style="color:${EX_COLOR[ex]}">${EXL[ex].toUpperCase()}</div>
         ${row[ex]!==undefined
@@ -461,10 +478,9 @@ function renderCards(rows){
           :`<div class="rna">—</div>`}
       </div>`;
     }).join('');
-    // 價差 badge
     const pdBadge=row.priceDiffPct>0.0001
-      ?`<span style="font-family:var(--mono);font-size:9px;font-weight:700;padding:1px 7px;border-radius:3px;background:rgba(255,193,7,.12);color:var(--yellow);border:1px solid rgba(255,193,7,.25)">↕${(row.priceDiffPct*100).toFixed(3)}%</span>`:'';
-
+      ?`<span style="font-family:var(--mono);font-size:9px;font-weight:700;padding:1px 7px;border-radius:3px;
+          background:rgba(255,193,7,.12);color:var(--yellow);border:1px solid rgba(255,193,7,.25)">↕${(row.priceDiffPct*100).toFixed(3)}%</span>`:'';
     return `<div class="card ${hot}" id="card-${row.symbol}">
       <div class="ch" onclick="openCard('${row.symbol}')">
         <div class="cl">
@@ -483,7 +499,6 @@ function renderCards(rows){
     </div>`;
   }).join('');
 }
-
 function openCard(sym){document.getElementById('cf-'+sym).classList.toggle('open');}
 
 // ══ 卡片展開內容 ══════════════════════════════════════
@@ -494,15 +509,12 @@ function buildDetail(row){
   const periods=parseFloat(document.getElementById('c-period')?.value)||3;
   const earn=calcEarn(row,amt,periods);
   const be=Math.ceil(row.totalFee/row.spread);
-
   return `
   <div class="tabs">
     <div class="tab active" onclick="swTab(this,'tr-${row.symbol}','${row.symbol}')">費率收益</div>
     <div class="tab" onclick="swTab(this,'tp-${row.symbol}','${row.symbol}')">合約價差</div>
     <div class="tab" onclick="swTab(this,'tt-${row.symbol}','${row.symbol}')">止盈止損</div>
   </div>
-
-  <!-- 費率收益 -->
   <div class="tab-panel show" id="tr-${row.symbol}">
     <div class="rg2" style="margin-bottom:10px;">
       <div><div class="rl">建議做空</div><div style="margin-top:3px"><span class="tag tag-short">${EXL[row.maxEx]}</span></div></div>
@@ -520,248 +532,233 @@ function buildDetail(row){
       </div>
       <div class="earn-r"><span class="ek">損益兩平</span><span class="ev a">${be} 週期（≈${(be*8/24).toFixed(1)}天）</span></div>
     </div>
-    <div class="note">手續費：${EXL[row.maxEx]} ${(FEES[row.maxEx]*100).toFixed(3)}% + ${EXL[row.minEx]} ${(FEES[row.minEx]*100).toFixed(3)}% = 合計 ${(row.totalFee*100).toFixed(3)}%</div>
+    <div class="note">手續費：${EXL[row.maxEx]} ${(FEES[row.maxEx]*100).toFixed(3)}% + ${EXL[row.minEx]} ${(FEES[row.minEx]*100).toFixed(3)}%</div>
   </div>
-
-  <!-- 合約價差 -->
-  <div class="tab-panel" id="tp-${row.symbol}">
-    ${buildPricePanel(row,amt)}
-  </div>
-
-  <!-- 止盈止損 -->
-  <div class="tab-panel" id="tt-${row.symbol}">
-    ${buildTPSLPanel(row)}
-  </div>`;
+  <div class="tab-panel" id="tp-${row.symbol}">${buildPricePanel(row,amt)}</div>
+  <div class="tab-panel" id="tt-${row.symbol}">${buildTPSLPanel(row)}</div>`;
 }
 
-// ── 合約價差面板 ──────────────────────────────────────
+// ══ 合約價差面板 ══════════════════════════════════════
 function buildPricePanel(row,amt){
   const available=EX_ALL.filter(e=>visEx.has(e)&&row.prices?.[e]!==undefined);
-  if(available.length<2) return '<div style="color:var(--dim);font-family:var(--mono);font-size:11px;padding:10px;">無足夠價格資料</div>';
-
-  // 以做空交易所為「較貴」，做多交易所為「較便宜」
-  const shortEx=row.maxEx; const longEx=row.minEx;
-  const shortPrice=row.prices?.[shortEx]; const longPrice=row.prices?.[longEx];
-  const hasBothPrices=shortPrice&&longPrice;
-  const actualDiffPct=hasBothPrices?(shortPrice-longPrice)/longPrice:null;
-  const actualDiffAmt=hasBothPrices?(shortPrice-longPrice)/longPrice*amt:null;
-
-  // 各交易所價格行
+  if(available.length<2)return'<div style="color:var(--dim);font-family:var(--mono);font-size:11px;padding:10px;">無足夠價格資料</div>';
+  const shortEx=row.maxEx,longEx=row.minEx;
+  const sp=row.prices?.[shortEx],lp=row.prices?.[longEx];
+  const hasBoth=sp&&lp;
+  const diffPct=hasBoth?(sp-lp)/lp:null;
+  const diffAmt=hasBoth?Math.abs(diffPct)*amt:null;
   const basePrice=row.prices[row.priceMaxEx];
   const priceRows=available.map(ex=>{
     const p=row.prices[ex];
-    const diff=basePrice?(p-basePrice)/basePrice*100:0;
-    const isRef=ex===row.priceMaxEx;
+    const diff=basePrice&&ex!==row.priceMaxEx?(p-basePrice)/basePrice*100:null;
+    const isShort=ex===shortEx,isLong=ex===longEx;
     return `<div class="price-row">
-      <span class="pr-ex" style="color:${EX_COLOR[ex]}">${EXL[ex]}</span>
+      <div class="pr-left">
+        <span class="pr-ex" style="color:${EX_COLOR[ex]}">${EXL[ex]}</span>
+        ${isShort?`<span class="tag tag-short" style="font-size:8px">做空</span>`:''}
+        ${isLong ?`<span class="tag tag-long"  style="font-size:8px">做多</span>`:''}
+      </div>
       <span class="pr-price">${fP(p)}</span>
-      <span class="pr-diff ${isRef?'ref':diff>0?'hi':'lo'}">${isRef?'基準':((diff>=0?'+':'')+diff.toFixed(4)+'%')}</span>
+      <span class="pr-diff ${diff===null?'':diff>0?'':'lo'}" style="color:${diff===null?'var(--mute)':diff>0.005?'var(--yellow)':diff>0?'var(--text)':'var(--green)'}">
+        ${diff===null?'基準':(diff>=0?'+':'')+diff.toFixed(4)+'%'}
+      </span>
     </div>`;
   }).join('');
-
-  // 套利方向說明
-  const directionNote=hasBothPrices&&actualDiffPct!==null?`
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:10px;margin-bottom:8px;">
-      <div style="font-size:10px;color:var(--dim);font-family:var(--mono);letter-spacing:1px;margin-bottom:6px;">📌 你的套利方向</div>
-      <div style="font-size:11px;font-family:var(--mono);line-height:1.8;color:var(--text);">
-        做空 <b style="color:var(--red)">${EXL[shortEx]}</b>（合約價 ${fP(shortPrice)}）<br>
-        做多 <b style="color:var(--green)">${EXL[longEx]}</b>（合約價 ${fP(longPrice)}）<br>
-        <span style="color:var(--yellow)">現在做空方比做多方貴 <b>${(Math.abs(actualDiffPct)*100).toFixed(4)}%</b></span>
-      </div>
-    </div>`:''
-
-  // 收斂/擴散計算（只在有兩邊價格時顯示）
-  const convHtml=hasBothPrices&&actualDiffAmt!==null?`
+  const convHtml=hasBoth&&diffAmt!==null?`
     <div class="conv-card bullish">
-      <div class="conv-title" style="color:var(--green)">✅ 價差收斂（對你有利）</div>
+      <div class="conv-title" style="color:var(--green)">✅ 若結算前價差收斂（對你有利）</div>
       <div class="conv-grid">
-        <div class="conv-item">
-          <div class="conv-label">額外獲利</div>
-          <div class="conv-val g">+${Math.abs(actualDiffAmt).toFixed(2)} U</div>
-        </div>
-        <div class="conv-item">
-          <div class="conv-label">情境說明</div>
-          <div style="font-size:9px;color:var(--dim);font-family:var(--mono);margin-top:4px;line-height:1.6">
-            ${EXL[shortEx]}合約價跌回<br>與${EXL[longEx]}相同水準
-          </div>
-        </div>
+        <div class="conv-item"><div class="conv-label">額外獲利</div><div class="conv-val g">+${diffAmt.toFixed(2)} U</div></div>
+        <div class="conv-item"><div class="conv-label">說明</div><div style="font-size:9px;color:var(--dim);font-family:var(--mono);line-height:1.6;margin-top:4px">${EXL[shortEx]}價格<br>跌回${EXL[longEx]}水準</div></div>
       </div>
     </div>
-    <div class="conv-card bearish" style="margin-top:6px;">
-      <div class="conv-title" style="color:var(--red)">❌ 價差擴散（對你不利）</div>
+    <div class="conv-card bearish" style="margin-top:6px">
+      <div class="conv-title" style="color:var(--red)">❌ 若結算前價差擴散（對你不利）</div>
       <div class="conv-grid">
-        <div class="conv-item">
-          <div class="conv-label">額外損失</div>
-          <div class="conv-val r">-${Math.abs(actualDiffAmt).toFixed(2)} U</div>
-        </div>
-        <div class="conv-item">
-          <div class="conv-label">情境說明</div>
-          <div style="font-size:9px;color:var(--dim);font-family:var(--mono);margin-top:4px;line-height:1.6">
-            ${EXL[shortEx]}合約價繼續<br>遠離${EXL[longEx]}
-          </div>
-        </div>
+        <div class="conv-item"><div class="conv-label">額外損失</div><div class="conv-val r">-${diffAmt.toFixed(2)} U</div></div>
+        <div class="conv-item"><div class="conv-label">說明</div><div style="font-size:9px;color:var(--dim);font-family:var(--mono);line-height:1.6;margin-top:4px">${EXL[shortEx]}價格<br>繼續遠離${EXL[longEx]}</div></div>
       </div>
     </div>
-    <div class="note" style="margin-top:8px;">
-      💡 以上基於投入 ${amt} U 計算。結算時若價差剛好完全收斂則獲得最大額外收益，反之則損失。實際價格收斂不保證在一次結算內完成。
-    </div>`:'<div class="note">部分交易所無價格資料，無法計算收斂/擴散損益。</div>';
-
-  return directionNote+priceRows+convHtml;
+    <div class="note" style="margin-top:8px">以投入 ${amt} U 估算。實際收斂時機無法預測，不保證在一次結算內完成。</div>`
+    :'<div class="note">部分交易所無價格資料，無法計算收斂/擴散損益。</div>';
+  return priceRows+convHtml;
 }
 
-// ── 止盈止損面板 ──────────────────────────────────────
+// ══ 止盈止損面板（非對稱保護版）════════════════════════
 function buildTPSLPanel(row){
-  const sp=row.prices?.[row.maxEx];  // 做空方參考價
-  const lp=row.prices?.[row.minEx];  // 做多方參考價
-  const sugShortLiq=sp?Math.round(sp*1.18):'' ;  // 建議範本：比現價高18%
-  const sugLongLiq =lp?Math.round(lp*0.82):'' ;  // 建議範本：比現價低18%
-
+  const sp=row.prices?.[row.maxEx];
+  const lp=row.prices?.[row.minEx];
   return `
-  <div class="tpsl-header">
-    設定你在兩邊的<b style="color:var(--text)">爆倉價</b>和<b style="color:var(--text)">緩衝比例</b>，<br>
-    系統自動算出「對稱出場」止盈止損點位。
+  <div style="font-size:10px;color:var(--dim);font-family:var(--mono);line-height:1.8;margin-bottom:12px;">
+    填入<b style="color:var(--text)">槓桿倍數</b>與<b style="color:var(--text)">爆倉價</b>，系統算出止損（自己快爆時出場）與<br>
+    止盈（對面快爆時鎖利）點位。兩者<b style="color:var(--accent)">各自獨立</b>，不強制同步平倉。
   </div>
 
-  <div class="buf-row">
-    <span class="buf-label">🛡️ 安全緩衝（距爆倉多遠觸發）</span>
-    <input class="buf-inp" id="buf-${row.symbol}" type="number" value="5" min="1" max="20" oninput="calcTPSL('${row.symbol}')"/>
-    <span class="buf-unit">%</span>
-  </div>
-
-  <div class="tpsl-inputs-grid">
-    <div class="tpsl-box">
-      <div class="tpsl-box-title"><span class="tag tag-short">做空倉</span><span style="font-family:var(--mono);font-size:10px;color:var(--dim)">${EXL[row.maxEx]}</span></div>
-      <div class="tpsl-field">
-        <div class="tpsl-label">做空爆倉價 ↑</div>
-        <input class="tpsl-inp" id="sl-${row.symbol}" type="number"
-          placeholder="${sugShortLiq||'例：70000'}" oninput="calcTPSL('${row.symbol}')"/>
-      </div>
-      <div style="font-size:9px;color:var(--mute);font-family:var(--mono);margin-top:4px;">
-        現價參考：${sp?fP(sp):'—'}
-      </div>
+  <!-- 設定列：槓桿 + 緩衝 -->
+  <div class="setting-bar">
+    <div class="setting-box">
+      <span class="setting-label">槓桿</span>
+      <input class="setting-inp" id="lev-${row.symbol}" type="number" value="3" min="1" max="20" oninput="calcTPSL5('${row.symbol}')"/>
+      <span class="setting-unit">x</span>
     </div>
-    <div class="tpsl-box">
-      <div class="tpsl-box-title"><span class="tag tag-long">做多倉</span><span style="font-family:var(--mono);font-size:10px;color:var(--dim)">${EXL[row.minEx]}</span></div>
-      <div class="tpsl-field">
-        <div class="tpsl-label">做多爆倉價 ↓</div>
-        <input class="tpsl-inp" id="ll-${row.symbol}" type="number"
-          placeholder="${sugLongLiq||'例：55000'}" oninput="calcTPSL('${row.symbol}')"/>
-      </div>
-      <div style="font-size:9px;color:var(--mute);font-family:var(--mono);margin-top:4px;">
-        現價參考：${lp?fP(lp):'—'}
-      </div>
+    <div class="setting-box">
+      <span class="setting-label">緩衝距爆倉</span>
+      <input class="setting-inp" id="buf-${row.symbol}" type="number" value="5" min="1" max="30" oninput="calcTPSL5('${row.symbol}')"/>
+      <span class="setting-unit">%</span>
+    </div>
+  </div>
+
+  <!-- 理論爆倉距離提示 -->
+  <div class="liq-hint" id="liq-hint-${row.symbol}">
+    調整槓桿後這裡會顯示理論爆倉距離參考
+  </div>
+
+  <!-- 爆倉價輸入 -->
+  <div class="liq-inputs">
+    <div class="liq-box">
+      <div class="liq-box-title"><span class="tag tag-short">做空</span><span style="font-family:var(--mono);font-size:10px;color:var(--dim)">${EXL[row.maxEx]}</span></div>
+      <div class="liq-field-label">做空爆倉價 ↑</div>
+      <input class="liq-inp" id="sl-${row.symbol}" type="number"
+        placeholder="${sp?Math.round(sp*1.20):''}" oninput="calcTPSL5('${row.symbol}')"/>
+      <div class="liq-field-hint">現價：${sp?fP(sp):'—'}</div>
+    </div>
+    <div class="liq-box">
+      <div class="liq-box-title"><span class="tag tag-long">做多</span><span style="font-family:var(--mono);font-size:10px;color:var(--dim)">${EXL[row.minEx]}</span></div>
+      <div class="liq-field-label">做多爆倉價 ↓</div>
+      <input class="liq-inp" id="ll-${row.symbol}" type="number"
+        placeholder="${lp?Math.round(lp*0.80):''}" oninput="calcTPSL5('${row.symbol}')"/>
+      <div class="liq-field-hint">現價：${lp?fP(lp):'—'}</div>
     </div>
   </div>
 
   <div id="tpsl-r-${row.symbol}">
-    <div style="text-align:center;color:var(--dim);font-family:var(--mono);font-size:11px;padding:10px;">
-      ↑ 請輸入爆倉價格
-    </div>
+    <div style="text-align:center;color:var(--dim);font-family:var(--mono);font-size:11px;padding:10px;">↑ 請輸入爆倉價格後自動計算</div>
   </div>`;
 }
 
-function calcTPSL(sym){
-  const shortLiq=parseFloat(document.getElementById('sl-'+sym)?.value);
-  const longLiq =parseFloat(document.getElementById('ll-'+sym)?.value);
-  const buf     =(parseFloat(document.getElementById('buf-'+sym)?.value)||5)/100;
-  const el      =document.getElementById('tpsl-r-'+sym);
+function calcTPSL5(sym){
+  const lev   = parseFloat(document.getElementById('lev-'+sym)?.value)||3;
+  const buf   = (parseFloat(document.getElementById('buf-'+sym)?.value)||5)/100;
+  const shortLiq = parseFloat(document.getElementById('sl-'+sym)?.value);
+  const longLiq  = parseFloat(document.getElementById('ll-'+sym)?.value);
+  const row   = allData.find(r=>r.symbol===sym);
+  const sp    = row?.prices?.[row?.maxEx];
+  const lp    = row?.prices?.[row?.minEx];
+
+  // 更新爆倉距離提示
+  const liqDist = (1/lev*100).toFixed(1);
+  const hint=document.getElementById('liq-hint-'+sym);
+  if(hint) hint.innerHTML=
+    `<b>${lev}x 槓桿</b> → 理論爆倉距離約 <b>${liqDist}%</b> &nbsp;|&nbsp; 緩衝 ${(buf*100).toFixed(0)}% → 距爆倉還有 <b>${((1/lev-buf)*100).toFixed(1)}%</b> 時觸發<br>
+     ${sp?`做空現價：<b>${fP(sp)}</b> → 理論爆倉參考：<b>${fP(sp*(1+1/lev))}</b>`:''}
+     ${lp?` ｜ 做多現價：<b>${fP(lp)}</b> → 理論爆倉參考：<b>${fP(lp*(1-1/lev))}</b>`:''}`;
+
+  const el=document.getElementById('tpsl-r-'+sym);
   if(!shortLiq&&!longLiq){
     el.innerHTML='<div style="text-align:center;color:var(--dim);font-family:var(--mono);font-size:11px;padding:10px;">↑ 請輸入爆倉價格</div>';
     return;
   }
-  const row=allData.find(r=>r.symbol===sym);
 
-  // ── 止損：距爆倉還有 buf% 時先出場 ──
-  // 做空止損：價格「漲」到爆倉前 buf%
-  const shortSL = shortLiq ? shortLiq*(1-buf) : null;
-  // 做多止損：價格「跌」到爆倉前 buf%
-  const longSL  = longLiq  ? longLiq *(1+buf) : null;
+  // ── 點位計算 ──────────────────────────────────────────
+  // 止損：在距爆倉還有 buf% 時主動出場，避免被強制平倉
+  const shortSL = shortLiq ? shortLiq*(1-buf) : null;   // 做空止損：價漲到爆倉前buf%
+  const longSL  = longLiq  ? longLiq *(1+buf) : null;   // 做多止損：價跌到爆倉前buf%
 
-  // ── 止盈：另一邊接近爆倉時，這一邊止盈 ──
-  // 做空止盈：價格「跌」到接近做多爆倉的 buf% 前 → 做空大賺，同步平倉
+  // 止盈：對面快爆倉時，我這邊大賺，可選擇鎖利（不強制）
+  // 做空止盈：價格跌到接近做多爆倉前buf%，做空方向大賺
   const shortTP = longLiq  ? longLiq *(1+buf) : null;
-  // 做多止盈：價格「漲」到接近做空爆倉的 buf% 前 → 做多大賺，同步平倉
+  // 做多止盈：價格漲到接近做空爆倉前buf%，做多方向大賺
   const longTP  = shortLiq ? shortLiq*(1-buf) : null;
 
+  // 距現價多遠
+  const sDist  = sp&&shortSL ? ((shortSL-sp)/sp*100).toFixed(2) : null;
+  const lDist  = lp&&longSL  ? ((longSL-lp)/lp*100).toFixed(2)  : null;
+  const sTPDist= sp&&shortTP ? ((sp-shortTP)/sp*100).toFixed(2)  : null;
+  const lTPDist= lp&&longTP  ? ((longTP-lp)/lp*100).toFixed(2)   : null;
+
   const f=v=>v?fP(v):'—';
-  const sp=row?.prices?.[row?.maxEx];
-  const lp=row?.prices?.[row?.minEx];
-  const shortDist=sp&&shortSL?((shortLiq-sp)/sp*100).toFixed(1):null;
-  const longDist =lp&&longSL ?((lp-longLiq)/lp*100).toFixed(1):null;
+  const distTag=(d,isLoss)=>d===null?'':`<span class="tpsl-pt-dist" style="color:${isLoss?'var(--red)':'var(--green)'}">現價差 ${d}%</span>`;
 
   el.innerHTML=`
     <div class="tpsl-result">
-      <div class="tpsl-result-title">📌 對稱出場點位（緩衝 ${(buf*100).toFixed(0)}%）</div>
-      <div class="tpsl-pair-grid">
-        <div class="tpsl-side">
-          <div class="tpsl-side-title" style="color:var(--red)">做空倉（${row?EXL[row.maxEx]:'做空'}）</div>
-          <div class="tpsl-line">
-            <span class="tpsl-key">🔴 止損價</span>
-            <div style="text-align:right">
-              <span class="tpsl-val r">${f(shortSL)}</span>
-              <div class="tpsl-formula">爆倉 × ${(1-buf).toFixed(3)}</div>
+      <div class="tpsl-result-title">📌 建議點位（緩衝 ${(buf*100).toFixed(0)}%）</div>
+      <div class="tpsl-cols">
+        <!-- 做空 -->
+        <div class="tpsl-col">
+          <div class="tpsl-col-title" style="color:var(--red)">做空倉（${row?EXL[row.maxEx]:'做空'}）</div>
+          <!-- 止損 -->
+          <div class="tpsl-pt" style="border:1px solid rgba(255,79,106,.2)">
+            <div class="tpsl-pt-top">
+              <span class="tpsl-pt-name"><span style="color:var(--red)">●</span> 止損</span>
+              <span class="tpsl-pt-price r">${f(shortSL)}</span>
+            </div>
+            <div class="tpsl-pt-bottom">
+              <span class="tpsl-pt-formula">爆倉 × ${(1-buf).toFixed(3)}</span>
+              ${distTag(sDist,true)}
             </div>
           </div>
-          <div class="tpsl-line">
-            <span class="tpsl-key">🟢 止盈價</span>
-            <div style="text-align:right">
-              <span class="tpsl-val g">${f(shortTP)}</span>
-              <div class="tpsl-formula">做多爆倉 × ${(1+buf).toFixed(3)}</div>
+          <!-- 止盈 -->
+          <div class="tpsl-pt" style="border:1px solid rgba(0,230,118,.2)">
+            <div class="tpsl-pt-top">
+              <span class="tpsl-pt-name"><span style="color:var(--green)">●</span> 止盈</span>
+              <span class="tpsl-pt-price g">${f(shortTP)}</span>
+            </div>
+            <div class="tpsl-pt-bottom">
+              <span class="tpsl-pt-formula">做多爆倉 × ${(1+buf).toFixed(3)}</span>
+              ${distTag(sTPDist,false)}
             </div>
           </div>
-          ${shortDist?`<div class="tpsl-formula" style="margin-top:5px;color:var(--dim)">距止損還有 ${shortDist}%</div>`:''}
         </div>
-        <div class="tpsl-side">
-          <div class="tpsl-side-title" style="color:var(--green)">做多倉（${row?EXL[row.minEx]:'做多'}）</div>
-          <div class="tpsl-line">
-            <span class="tpsl-key">🔴 止損價</span>
-            <div style="text-align:right">
-              <span class="tpsl-val r">${f(longSL)}</span>
-              <div class="tpsl-formula">爆倉 × ${(1+buf).toFixed(3)}</div>
+        <!-- 做多 -->
+        <div class="tpsl-col">
+          <div class="tpsl-col-title" style="color:var(--green)">做多倉（${row?EXL[row.minEx]:'做多'}）</div>
+          <div class="tpsl-pt" style="border:1px solid rgba(255,79,106,.2)">
+            <div class="tpsl-pt-top">
+              <span class="tpsl-pt-name"><span style="color:var(--red)">●</span> 止損</span>
+              <span class="tpsl-pt-price r">${f(longSL)}</span>
+            </div>
+            <div class="tpsl-pt-bottom">
+              <span class="tpsl-pt-formula">爆倉 × ${(1+buf).toFixed(3)}</span>
+              ${distTag(lDist,true)}
             </div>
           </div>
-          <div class="tpsl-line">
-            <span class="tpsl-key">🟢 止盈價</span>
-            <div style="text-align:right">
-              <span class="tpsl-val g">${f(longTP)}</span>
-              <div class="tpsl-formula">做空爆倉 × ${(1-buf).toFixed(3)}</div>
+          <div class="tpsl-pt" style="border:1px solid rgba(0,230,118,.2)">
+            <div class="tpsl-pt-top">
+              <span class="tpsl-pt-name"><span style="color:var(--green)">●</span> 止盈</span>
+              <span class="tpsl-pt-price g">${f(longTP)}</span>
+            </div>
+            <div class="tpsl-pt-bottom">
+              <span class="tpsl-pt-formula">做空爆倉 × ${(1-buf).toFixed(3)}</span>
+              ${distTag(lTPDist,false)}
             </div>
           </div>
-          ${longDist?`<div class="tpsl-formula" style="margin-top:5px;color:var(--dim)">距止損還有 ${longDist}%</div>`:''}
         </div>
       </div>
 
-      <div class="scenario-box">
-        <div class="scenario-title">⚡ 4 種觸發情境（兩邊同步出場）</div>
-        ${shortSL?`<div class="scenario-item">
-          <span class="scenario-icon">🔴</span>
-          <div class="scenario-text">
-            <b>情境 A：做空被軋</b> — 價格漲到 <span class="rval">${f(shortSL)}</span>，做空止損出場，<b>同時做多也平倉</b>，避免裸多單繼續虧損。
-          </div>
-        </div>`:''}
-        ${longSL?`<div class="scenario-item">
-          <span class="scenario-icon">🔴</span>
-          <div class="scenario-text">
-            <b>情境 B：做多被打</b> — 價格跌到 <span class="rval">${f(longSL)}</span>，做多止損出場，<b>同時做空也平倉</b>，避免裸空單繼續虧損。
-          </div>
-        </div>`:''}
-        ${shortTP&&longLiq?`<div class="scenario-item">
-          <span class="scenario-icon">🟢</span>
-          <div class="scenario-text">
-            <b>情境 C：做空大賺</b> — 價格跌到 <span class="gval">${f(shortTP)}</span>（接近做多爆倉），做空止盈，<b>同時做多也平倉鎖利</b>。
-          </div>
-        </div>`:''}
-        ${longTP&&shortLiq?`<div class="scenario-item">
-          <span class="scenario-icon">🟢</span>
-          <div class="scenario-text">
-            <b>情境 D：做多大賺</b> — 價格漲到 <span class="gval">${f(longTP)}</span>（接近做空爆倉），做多止盈，<b>同時做空也平倉鎖利</b>。
-          </div>
-        </div>`:''}
+      <!-- 4種情境說明 -->
+      <div class="scenario-grid">
+        ${shortSL?`<div class="scenario-card loss">
+          <div class="scenario-title-row"><span class="scenario-icon">🔴</span><span class="scenario-name">做空止損觸發</span></div>
+          <div class="scenario-desc">價格漲到 <span class="rv">${f(shortSL)}</span>，做空倉認虧出場。<b>做多倉仍持有</b>，你需自行決定是否同步平倉以保留費率收益。</div>
+        </div>`:'<div></div>'}
+        ${longSL?`<div class="scenario-card loss">
+          <div class="scenario-title-row"><span class="scenario-icon">🔴</span><span class="scenario-name">做多止損觸發</span></div>
+          <div class="scenario-desc">價格跌到 <span class="rv">${f(longSL)}</span>，做多倉認虧出場。<b>做空倉仍持有</b>，你需自行決定是否同步平倉。</div>
+        </div>`:'<div></div>'}
+        ${shortTP&&longLiq?`<div class="scenario-card win">
+          <div class="scenario-title-row"><span class="scenario-icon">🟢</span><span class="scenario-name">做空止盈觸發</span></div>
+          <div class="scenario-desc">價格跌到 <span class="gv">${f(shortTP)}</span>，做空大賺，對面（做多）快爆倉。<b>建議此時鎖利平倉</b>，同時留意做多倉風險。</div>
+        </div>`:'<div></div>'}
+        ${longTP&&shortLiq?`<div class="scenario-card win">
+          <div class="scenario-title-row"><span class="scenario-icon">🟢</span><span class="scenario-name">做多止盈觸發</span></div>
+          <div class="scenario-desc">價格漲到 <span class="gv">${f(longTP)}</span>，做多大賺，對面（做空）快爆倉。<b>建議此時鎖利平倉</b>，同時留意做空倉風險。</div>
+        </div>`:'<div></div>'}
       </div>
 
-      <div class="note" style="margin-top:8px;">
-        ⚠ 「兩邊同步出場」需手動在兩個交易所分別操作，此工具僅顯示建議價位。<br>
-        ⚠ 緩衝 ${(buf*100).toFixed(0)}% 代表在距爆倉還有 ${(buf*100).toFixed(0)}% 時觸發，可依自身槓桿調整（建議 3%~10%）。
+      <div class="note" style="margin-top:10px;">
+        ⚠ 止盈點位達到時，系統<b style="color:var(--accent)">不強制平倉</b>，需你手動在交易所操作。<br>
+        ⚠ 當一邊觸發止損後，另一邊已失去對沖保護，請立即評估是否平倉。<br>
+        ⚠ 緩衝建議：1-3倍槓桿用 5-10%；5-6倍槓桿用 3-5%。
       </div>
     </div>`;
 }
@@ -769,10 +766,7 @@ function calcTPSL(sym){
 // ══ 桌機表格 ══════════════════════════════════════════
 function renderTable(rows){
   const tbody=document.getElementById('tbody');
-  if(!rows.length){
-    tbody.innerHTML=`<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--dim);font-family:var(--mono)">無符合資料</td></tr>`;
-    return;
-  }
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--dim);font-family:var(--mono)">無符合資料</td></tr>`;return;}
   const maxS=rows[0]?.spread||1;
   tbody.innerHTML=rows.map((row,i)=>{
     const bw=Math.min((row.spread/maxS)*50,50);
@@ -785,10 +779,9 @@ function renderTable(rows){
       <td style="color:var(--yellow);font-family:var(--mono)">${annual}%</td>
       <td><span style="font-family:var(--mono);font-size:10px;color:${row.priceDiffPct>0.0003?'var(--yellow)':'var(--dim)'}">${pd}</span></td>
       ${EX_ALL.map(ex=>{
-        const lp=row.prices?.[ex];
-        const rate=row[ex];
+        const lp=row.prices?.[ex],rate=row[ex];
         return `<td><div style="text-align:right">
-          ${rate!==undefined?`<div class="${rate>1e-4?'rp':rate<-1e-4?'rn':'rz'}">${rate>=0?'+':''}${(rate*100).toFixed(4)}%</div>`:'<span class="rna2">—</span>'}
+          ${rate!==undefined?`<div class="${rate>1e-4?'rp':rate<-1e-4?'rn':'rz'}">${rate>=0?'+':''}${(rate*100).toFixed(4)}%</div>`:`<span class="rna2">—</span>`}
           ${lp?`<div style="font-family:var(--mono);font-size:9px;color:var(--accent)">${fP(lp)}</div>`:''}
         </div></td>`;
       }).join('')}
@@ -827,7 +820,7 @@ function updateEarnCalc(){
     </div>`;
 }
 
-// ══ 工具函式 ══════════════════════════════════════════
+// ══ 工具 ══════════════════════════════════════════════
 function calcEarn(row,amt,periods){
   const income=amt*row.spread*periods,fee=amt*row.totalFee;
   return{income,fee,net:income-fee};
@@ -841,8 +834,7 @@ function fP(p){
 function sColor(ns){return ns>=0.001?'var(--orange)':ns>=0.0003?'var(--yellow)':'var(--green)';}
 function bestNext(row){
   const ts=[row.binanceNext,row.bybitNext,row.okxNext,row.mexcNext,row.kucoinNext].filter(Boolean);
-  if(!ts.length)return'—';
-  const d=Math.min(...ts)-Date.now();
+  if(!ts.length)return'—';const d=Math.min(...ts)-Date.now();
   if(d<=0)return'即將結算';
   return`${Math.floor(d/3600000)}h ${Math.floor(d%3600000/60000)}m`;
 }
@@ -850,23 +842,17 @@ function setStatus(s,t){
   document.getElementById('dot').className='dot'+(s==='live'?' live':'');
   document.getElementById('stxt').textContent=t;
 }
-function toggle(id){
-  document.getElementById('b-'+id).classList.toggle('show');
-  document.getElementById('t-'+id).classList.toggle('open');
-}
+function toggle(id){document.getElementById('b-'+id).classList.toggle('show');document.getElementById('t-'+id).classList.toggle('open');}
 function swTab(el,panelId,sym){
   const cf=document.getElementById('cf-'+sym);
   cf.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   cf.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('show'));
-  el.classList.add('active');
-  document.getElementById(panelId).classList.add('show');
+  el.classList.add('active');document.getElementById(panelId).classList.add('show');
 }
 function showEmpty(msg){
   document.getElementById('cards').innerHTML=`<div class="empty">${msg}</div>`;
   document.getElementById('tbody').innerHTML=`<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--red);font-family:var(--mono)">${msg}</td></tr>`;
 }
-
-// ══ 啟動 ══════════════════════════════════════════════
 loadData();
 </script>
 </body>
